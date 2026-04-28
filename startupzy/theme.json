@@ -1,250 +1,407 @@
 {
-	"version": 2,
-	"settings": {
-		"appearanceTools": true,
-		"color": {
-			"link": true,
-			"palette": [
-				{
-					"slug": "startupzy-primary",
-					"color": "#1E70EA",
-					"name": "Primary"
-				},
-				{
-					"slug": "startupzy-secondary",
-					"color": "#07295A",
-					"name": "Secondary"
-				},
-				{
-					"slug": "startupzy-bodytext",
-					"color": "#717C90",
-					"name": "Body Text"
-				},
-				{
-					"slug": "startupzy-text",
-					"color": "#B7BFCB",
-					"name": "Text Footer"
-				},
-				{
-					"slug": "startupzy-bgsoft",
-					"color": "#F1F5FD",
-					"name": "Background Soft"
-				},
-				{
-					"slug": "startupzy-border",
-					"color": "#DBE0E9",
-					"name": "Border"
-				},
-				{
-					"slug": "startupzy-quote",
-					"color": "#FEFEFE33",
-					"name": "Quote Color"
-				},
-				{
-					"slug": "startupzy-bg-overlay",
-					"color": "#02132D",
-					"name": "BG Overlay"
-				},
-				{
-					"slug": "startupzy-bg-footer",
-					"color": "#031530",
-					"name": "BG Footer"
-				},
-				{
-					"slug": "startupzy-border-2",
-					"color": "#213349",
-					"name": "Border 2"
-				},
-				{
-					"slug": "startupzy-team-overlay",
-					"color": "#02132de6",
-					"name": "Team Overlay"
-				}
-			],
-			"gradients": [
-				{
-					"slug": "quinary-to-septenary",
-					"gradient": "linear-gradient(160deg, var(--wp--preset--color--quinary), var(--wp--preset--color--septenary))",
-					"name": "Pink to Yellow"
-				}
-			]
-		},
-		"typography": {
-			"customLineHeight": true,
-			"customFontSize": true,
-			"fontFamilies": [
-				{
-					"fontFamily": "'Helvetica'",
-					"name": "Helvetica",
-					"slug": "primary"
-				},
-				{
-					"fontFamily": "'Heebo'",
-					"name": "Heebo",
-					"slug": "secondary"
-				}
-			],
-			"fontSizes": [
-				{
-					"slug": "tiny",
-					"size": "16px",
-					"name": "Tiny"
-				},
-				{
-					"slug": "small",
-					"size": "18px",
-					"name": "Small"
-				},
-				{
-					"slug": "normal",
-					"size": "20px",
-					"name": "Normal"
-				},
-				{
-					"slug": "large",
-					"size": "24px",
-					"name": "Large"
-				},
-				{
-					"slug": "extra-large",
-					"size": "40px",
-					"name": "Extra large"
-				},
-				{
-					"slug": "huge",
-					"size": "96px",
-					"name": "Huge"
-				},
-				{
-					"slug": "gigantic",
-					"size": "144px",
-					"name": "Gigantic"
-				},
-				{
-                    "slug": "heading-1",
-                    "size": "clamp(32px, 4.167vw, 60px)",
-                    "name": "Heading 1"
+    "$schema": "https://schemas.wp.org/wp/6.2/theme.json",
+    "customTemplates": [
+        {
+            "name": "blank-canvas",
+            "title": "Blank canvas",
+            "postTypes": [
+                "post",
+                "page"
+            ]
+        },
+        {
+            "name": "full-width",
+            "title": "Full Width",
+            "postTypes": [
+                "post",
+                "page"
+            ]
+        }
+    ],
+    "settings": {
+        "appearanceTools": true,
+        "color": {
+            "gradients": [],
+            "palette": [
+                {
+                    "slug": "startupzy-primary",
+                    "name": "Primary (Legacy)",
+                    "color": "#1e70ea"
                 },
                 {
-                    "slug": "heading-2",
-                    "size": "clamp(24px, 2.5vw, 36px)",
-                    "name": "Heading 2"
+                    "slug": "startupzy-secondary",
+                    "name": "Secondary (Legacy)",
+                    "color": "#07295a"
                 },
                 {
-                    "slug": "heading-3",
-                    "size": "clamp(22px, 1.667vw, 24px)",
-                    "name": "Heading 3"
+                    "slug": "startupzy-bodytext",
+                    "name": "Body Text (Legacy)",
+                    "color": "#717c90"
                 },
                 {
-                    "slug": "heading-4",
-                    "size": "clamp(21px, 1.458vw, 21px)",
-                    "name": "Heading 4"
+                    "slug": "startupzy-text",
+                    "name": "Text Footer (Legacy)",
+                    "color": "#b7bfcb"
                 },
                 {
-                    "slug": "heading-5",
-                    "size": "clamp(12px, 0.973vw, 14px)",
-                    "name": "Heading 5"
+                    "slug": "startupzy-bgsoft",
+                    "name": "Background Soft (Legacy)",
+                    "color": "#f1f5fd"
                 },
                 {
-                    "slug": "heading-6",
-                    "size": "clamp(16px, 1.112vw, 16px)",
-                    "name": "Heading 6"
+                    "slug": "startupzy-border",
+                    "name": "Border (Legacy)",
+                    "color": "#dbe0e9"
+                },
+                {
+                    "slug": "startupzy-quote",
+                    "name": "Quote Color (Legacy)",
+                    "color": "#fefefe33"
+                },
+                {
+                    "slug": "startupzy-bg-overlay",
+                    "name": "BG Overlay (Legacy)",
+                    "color": "#02132d"
+                },
+                {
+                    "slug": "startupzy-bg-footer",
+                    "name": "BG Footer (Legacy)",
+                    "color": "#031530"
+                },
+                {
+                    "slug": "startupzy-border-2",
+                    "name": "Border 2 (Legacy)",
+                    "color": "#213349"
+                },
+                {
+                    "slug": "startupzy-team-overlay",
+                    "name": "Team Overlay (Legacy)",
+                    "color": "#02132de6"
+                },
+                {
+                    "slug": "gv-color-primary",
+                    "name": "Primary",
+                    "color": "#1e70ea"
+                },
+                {
+                    "slug": "gv-color-text-primary",
+                    "name": "Text Primary",
+                    "color": "#07295a"
+                },
+                {
+                    "slug": "gv-color-text-secondary",
+                    "name": "Text Secondary",
+                    "color": "#717c90"
+                },
+                {
+                    "slug": "gv-color-accent",
+                    "name": "Accent",
+                    "color": "#1e70ea"
+                },
+                {
+                    "slug": "gv-color-accent-hover",
+                    "name": "Accent Hover",
+                    "color": "#07295a"
+                },
+                {
+                    "slug": "gv-color-border",
+                    "name": "Border",
+                    "color": "#dbe0e9"
+                },
+                {
+                    "slug": "gv-color-border-secondary",
+                    "name": "Border Secondary",
+                    "color": "#213349"
+                },
+                {
+                    "slug": "gv-color-border-input",
+                    "name": "Border Input",
+                    "color": "#cdd3dd"
+                },
+                {
+                    "slug": "gv-color-text-placeholder",
+                    "name": "Text Placeholder",
+                    "color": "#a3aaba"
+                },
+                {
+                    "slug": "gv-color-background-primary",
+                    "name": "Background Primary",
+                    "color": "#031530"
+                },
+                {
+                    "slug": "gv-color-background-secondary",
+                    "name": "Background Secondary",
+                    "color": "#f1f5fd"
+                },
+                {
+                    "slug": "gv-color-background-tertiary",
+                    "name": "Background Tertiary",
+                    "color": "#e1ebff"
+                },
+                {
+                    "slug": "gv-color-secondary",
+                    "name": "Secondary",
+                    "color": "#1e70ea"
+                },
+                {
+                    "slug": "gv-color-white",
+                    "name": "White",
+                    "color": "#ffffff"
+                },
+                {
+                    "slug": "gv-color-text-footer",
+                    "name": "Text Footer",
+                    "color": "#b7bfcb"
+                },
+                {
+                    "slug": "gv-color-background-overlay",
+                    "name": "Background Overlay",
+                    "color": "#02132d"
+                },
+                {
+                    "slug": "gv-color-team-overlay",
+                    "name": "Team Overlay",
+                    "color": "#02132de6"
+                },
+                {
+                    "slug": "gv-color-dark-primary",
+                    "name": "Dark Primary",
+                    "color": "#ffffff"
+                },
+                {
+                    "slug": "gv-color-dark-secondary",
+                    "name": "Dark Secondary",
+                    "color": "#1e70ea"
+                },
+                {
+                    "slug": "gv-color-dark-text-primary",
+                    "name": "Dark Text Primary",
+                    "color": "#ffffff"
+                },
+                {
+                    "slug": "gv-color-dark-text-secondary",
+                    "name": "Dark Text Secondary",
+                    "color": "#ffffffb4"
+                },
+                {
+                    "slug": "gv-color-dark-accent",
+                    "name": "Dark Accent",
+                    "color": "#1e70ea"
+                },
+                {
+                    "slug": "gv-color-dark-accent-hover",
+                    "name": "Dark Accent Hover",
+                    "color": "#ffffff"
+                },
+                {
+                    "slug": "gv-color-dark-background-primary",
+                    "name": "Dark Background Primary",
+                    "color": "#031530"
+                },
+                {
+                    "slug": "gv-color-dark-background-secondary",
+                    "name": "Dark Background Secondary",
+                    "color": "#021026"
+                },
+                {
+                    "slug": "gv-color-dark-background-tertiary",
+                    "name": "Dark Background Tertiary",
+                    "color": "#0c1d37"
+                },
+                {
+                    "slug": "gv-color-dark-border",
+                    "name": "Dark Border",
+                    "color": "#ffffff1a"
+                },
+                {
+                    "slug": "gv-color-dark-border-input",
+                    "name": "Dark Border Input",
+                    "color": "#ffffff40"
+                },
+                {
+                    "slug": "gv-color-dark-text-placeholder",
+                    "name": "Dark Text Placeholder",
+                    "color": "#ffffff66"
+                },
+                {
+                    "slug": "gv-color-black",
+                    "name": "Black",
+                    "color": "#000000"
                 }
-			]
-		},
-		"spacing": {
-			"padding": true,
-			"margin": true,
-			"blockGap": true,
-			"units": [
-				"px",
-				"em",
-				"rem",
-				"vh",
-				"vw"
-			]
-		},
-		"layout": {
-			"contentSize": "1170px",
-			"wideSize": "1200px"
-		},
-		"border": {
-			"customColor": true,
-			"customRadius": true,
-			"customStyle": true,
-			"customWidth": true
-		},
-		"custom": {
-			"headings": {
-				"typography": {
-					"fontFamily": "var(--wp--preset--font-family--primary)"
-				}
-			}
-		}
-	},
-	"styles": {
-		"color": {
-			"background": "#ffffff",
-			"text": "#717C90"
-		},
-		"typography": {},
-		"elements": {
-			"link": {
-				"color": {
-					"text": "#1E70EA"
-				}
-			},
-			"h1": {
-				"typography": {
-					"fontFamily": "var(--wp--custom--headings--typography--font-family)"
-				}
-			},
-			"h2": {
-				"typography": {
-					"fontFamily": "var(--wp--custom--headings--typography--font-family)"
-				}
-			},
-			"h3": {
-				"typography": {
-					"fontFamily": "var(--wp--custom--headings--typography--font-family)"
-				}
-			},
-			"h4": {
-				"typography": {
-					"fontFamily": "var(--wp--custom--headings--typography--font-family)"
-				}
-			},
-			"h5": {
-				"typography": {
-					"fontFamily": "var(--wp--custom--headings--typography--font-family)"
-				}
-			},
-			"h6": {
-				"typography": {
-					"fontFamily": "var(--wp--custom--headings--typography--font-family)"
-				}
-			}
-		},
-		"blocks": {}
-	},
-	"templateParts": [
-		{
-			"name": "header",
-			"area": "header"
-		},
-		{
-			"name": "footer",
-			"area": "footer"
-		}
-	],
-	"customTemplates": [
-		{
-			"name": "blank-canvas",
-			"title": "Blank Canvas"
-		},
-		{
-			"name": "template-basic",
-			"title": "Basic Template"
-		}
-    ]
+            ]
+        },
+        "custom": {
+            "headings": {
+                "typography": {
+                    "fontFamily": "var(--wp--preset--font-family--primary)"
+                }
+            }
+        },
+        "layout": {
+            "contentSize": "100vw",
+            "wideSize": "100vw"
+        },
+        "spacing": {
+            "padding": true,
+            "margin": true,
+            "blockGap": true,
+            "units": [
+                "px",
+                "em",
+                "rem",
+                "vh",
+                "vw"
+            ]
+        },
+        "typography": {
+            "customFontSize": true,
+            "fontFamilies": [
+                {
+                    "name": "Heebo",
+                    "slug": "heebo",
+                    "fontFamily": "Heebo, sans-serif",
+                    "fontFace": [
+                        {
+                            "src": "file:./assets/fonts/heebo/NGSpv5_NC0k9P_v6ZUCbLRAHxK1E1yycd0Onz02SXQ.woff2",
+                            "fontWeight": "300",
+                            "fontStyle": "normal",
+                            "fontFamily": "Heebo"
+                        },
+                        {
+                            "src": "file:./assets/fonts/heebo/NGSpv5_NC0k9P_v6ZUCbLRAHxK1EiSycd0Onz02SXQ.woff2",
+                            "fontWeight": "400",
+                            "fontStyle": "normal",
+                            "fontFamily": "Heebo"
+                        },
+                        {
+                            "src": "file:./assets/fonts/heebo/NGSpv5_NC0k9P_v6ZUCbLRAHxK1Euyycd0Onz02SXQ.woff2",
+                            "fontWeight": "500",
+                            "fontStyle": "normal",
+                            "fontFamily": "Heebo"
+                        },
+                        {
+                            "src": "file:./assets/fonts/heebo/NGSpv5_NC0k9P_v6ZUCbLRAHxK1EVyucd0Onz02SXQ.woff2",
+                            "fontWeight": "600",
+                            "fontStyle": "normal",
+                            "fontFamily": "Heebo"
+                        }
+                    ]
+                }
+            ],
+            "fontSizes": [
+                {
+                    "fluid": {
+                        "min": "0.875rem",
+                        "max": "1rem"
+                    },
+                    "size": "1rem",
+                    "slug": "small",
+                    "name": "Small"
+                },
+                {
+                    "fluid": {
+                        "min": "1rem",
+                        "max": "1.125rem"
+                    },
+                    "size": "1.125rem",
+                    "slug": "medium",
+                    "name": "Medium"
+                },
+                {
+                    "fluid": {
+                        "min": "1.75rem",
+                        "max": "1.875rem"
+                    },
+                    "size": "1.75rem",
+                    "slug": "large",
+                    "name": "Large"
+                },
+                {
+                    "fluid": false,
+                    "size": "2.25rem",
+                    "slug": "extra-large",
+                    "name": "Extra Large"
+                },
+                {
+                    "name": "heading-1",
+                    "size": "60px",
+                    "slug": "heading-1",
+                    "fluid": {
+                        "min": "40px",
+                        "max": "60px"
+                    }
+                },
+                {
+                    "name": "heading-2",
+                    "size": "36px",
+                    "slug": "heading-2"
+                },
+                {
+                    "name": "heading-3",
+                    "size": "24px",
+                    "slug": "heading-3"
+                },
+                {
+                    "name": "heading-4",
+                    "size": "21px",
+                    "slug": "heading-4"
+                },
+                {
+                    "name": "heading-5",
+                    "size": "14px",
+                    "slug": "heading-5"
+                },
+                {
+                    "name": "heading-6",
+                    "size": "16px",
+                    "slug": "heading-6"
+                }
+            ]
+        }
+    },
+    "styles": {
+        "spacing": {
+            "blockGap": "1.2rem"
+        },
+        "blocks": {
+            "core/post-content": {
+                "spacing": {
+                    "margin": {
+                        "top": "0px"
+                    }
+                }
+            }
+        },
+        "color": {
+            "text": "var(--wp--preset--color--startupzy-bodytext)"
+        },
+        "elements": {
+            "link": {
+                "color": {
+                    "text": "var(--wp--preset--color--startupzy-primary)"
+                },
+                ":hover": {
+                    "color": {
+                        "text": "var(--wp--preset--color--startupzy-secondary)"
+                    }
+                }
+            },
+            "heading": {
+                "color": {
+                    "text": "var(--wp--preset--color--startupzy-secondary)"
+                }
+            }
+        }
+    },
+    "templateParts": [
+        {
+            "area": "header",
+            "name": "header"
+        },
+        {
+            "area": "footer",
+            "name": "footer"
+        }
+    ],
+    "version": 2
 }

@@ -4,18 +4,16 @@
  *
  * @author Jegstudio
  * @package startupzy
- * @since 1.0.0
  */
 
 namespace Startupzy;
 
+use WP_Query;
+
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-use Startupzy\Block_Patterns;
-use Startupzy\Block_Styles;
-use Startupzy\Upgrader;
 
 /**
  * Init Class
@@ -48,40 +46,238 @@ class Init {
 	 * Class constructor.
 	 */
 	private function __construct() {
+		$this->init_instance();
 		$this->load_hooks();
-		$this->register_upgrader();
 	}
 
 	/**
 	 * Load initial hooks.
 	 */
 	private function load_hooks() {
-		// actions.
-		add_action( 'init', array( $this, 'add_theme_templates' ) );
-		add_action( 'after_setup_theme', array( $this, 'theme_setup' ) );
-		add_action( 'after_theme_setup', array( $this, 'content_width' ), 0 );
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-		add_action( 'admin_notices', array( $this, 'notice_install_plugin' ) );
-		add_action( 'wp_ajax_startupzy_set_admin_notice_viewed', array( $this, 'notice_closed' ) );
-		add_action( 'admin_init', array( $this, 'load_editor_styles' ) );
-		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
+		add_action( 'after_setup_theme', array( $this, 'setup_theme' ) );
+		add_action( 'after_setup_theme', array( $this, 'maybe_sync_global_styles_after_version_change' ), 20 );
 		add_action( 'init', array( $this, 'register_block_patterns' ), 9 );
-		add_action( 'init', array( $this, 'register_block_styles' ), 9 );
-		add_action( 'admin_enqueue_scripts', array( $this, 'backend_scripts' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'dashboard_scripts' ) );
 
-		// filters.
-		add_filter( 'excerpt_length', array( $this, 'excerpt_length' ) );
-		add_filter( 'excerpt_more', array( $this, 'excerpt_elipsis' ) );
+		add_action( 'wp_ajax_startupzy_set_admin_notice_viewed', array( $this, 'notice_closed' ) );
+
+		add_action( 'after_switch_theme', array( $this, 'update_global_styles_after_theme_switch' ) );
 		add_filter( 'gutenverse_template_path', array( $this, 'template_path' ), null, 3 );
 		add_filter( 'gutenverse_themes_template', array( $this, 'add_template' ), 10, 2 );
-
-		// Default Font.
 		add_filter( 'gutenverse_block_config', array( $this, 'default_font' ), 10 );
 		add_filter( 'gutenverse_font_header', array( $this, 'default_header_font' ) );
 		add_filter( 'gutenverse_global_css', array( $this, 'global_header_style' ) );
 
 		add_filter( 'gutenverse_stylesheet_directory', array( $this, 'change_stylesheet_directory' ) );
 		add_filter( 'gutenverse_themes_override_mechanism', '__return_true' );
+
+		add_filter( 'gutenverse_themes_support_section_global_style', '__return_true' );
+		add_filter( 'gutenverse_wporg_plus_mechanism', '__return_true' );
+		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
+	}
+
+	/**
+	 * Update Global Styles After Theme Switch
+	 */
+	public function update_global_styles_after_theme_switch() {
+		$this->sync_global_styles();
+	}
+
+	/**
+	 * Sync Global Styles after a version change.
+	 */
+	public function maybe_sync_global_styles_after_version_change() {
+		$synced_version = get_option( 'startupzy_global_styles_synced_version' );
+
+		if ( STARTUPZY_VERSION === $synced_version ) {
+			return;
+		}
+
+		$this->sync_global_styles();
+	}
+
+	/**
+	 * Sync Global Styles After Theme Update.
+	 *
+	 * @param WP_Upgrader $upgrader_object Upgrader instance.
+	 * @param array       $options         Update options.
+	 */
+	public function sync_global_styles_after_theme_update( $upgrader_object, $options ) {
+		if ( empty( $options['type'] ) || 'theme' !== $options['type'] ) {
+			return;
+		}
+
+		if ( empty( $options['action'] ) || 'update' !== $options['action'] ) {
+			return;
+		}
+
+		if ( empty( $options['themes'] ) || ! is_array( $options['themes'] ) ) {
+			return;
+		}
+
+		$current_theme = get_stylesheet();
+		$parent_theme  = get_template();
+
+		if ( ! in_array( $current_theme, $options['themes'], true ) && ! in_array( $parent_theme, $options['themes'], true ) ) {
+			return;
+		}
+
+		$this->sync_global_styles();
+	}
+
+	/**
+	 * Sync Global Styles.
+	 */
+	private function sync_global_styles() {
+		$this->sync_global_colors();
+		$this->sync_global_fonts();
+		update_option( 'startupzy_global_styles_synced_version', STARTUPZY_VERSION );
+	}
+
+	/**
+	 * Sync Global Colors.
+	 */
+	private function sync_global_colors() {
+		// Get the path to the current theme's theme.json file.
+		$theme_json_path = get_template_directory() . '/theme.json';
+		$theme_slug      = get_option( 'stylesheet' ); // Get the current theme's slug.
+		$args            = array(
+			'post_type'      => 'wp_global_styles',
+			'post_status'    => 'publish',
+			'name'           => 'wp-global-styles-' . $theme_slug,
+			'posts_per_page' => 1,
+		);
+
+		$global_styles_query = new WP_Query( $args );
+		// Check if the theme.json file exists.
+		if ( file_exists( $theme_json_path ) && $global_styles_query->have_posts() ) {
+			$global_styles_query->the_post();
+			$global_styles_post_id = get_the_ID();
+			// Step 2: Get the existing global styles (color palette).
+			$global_styles_content = json_decode( get_post_field( 'post_content', $global_styles_post_id ), true );
+			if ( isset( $global_styles_content['settings']['color']['palette']['theme'] ) ) {
+				$existing_colors = $global_styles_content['settings']['color']['palette']['theme'];
+			} else {
+				$existing_colors = array();
+			}
+
+			// Step 3: Extract slugs from the existing colors.
+			$existing_slugs = array_column( $existing_colors, 'slug' );
+			// Step 4:Read the contents of the theme.json file.
+
+			global $wp_filesystem;
+			if ( empty( $wp_filesystem ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+				WP_Filesystem();
+			}
+			$theme_json_content = $wp_filesystem->get_contents( $theme_json_path );
+			$theme_json_data    = json_decode( $theme_json_content, true );
+
+			// Access the color palette from the theme.json file.
+			if ( isset( $theme_json_data['settings']['color']['palette'] ) ) {
+				$theme_colors = $theme_json_data['settings']['color']['palette'];
+				$has_changes  = false;
+
+				// Step 5: Loop through theme.json colors and add them if they don't exist.
+				foreach ( $theme_colors as $theme_color ) {
+					if ( ! empty( $theme_color['slug'] ) && ! in_array( $theme_color['slug'], $existing_slugs, true ) ) {
+						$existing_colors[] = $theme_color; // Add new color to the existing palette.
+						$existing_slugs[] = $theme_color['slug'];
+						$has_changes      = true;
+					}
+				}
+
+				if ( $has_changes ) {
+					// Step 6: Update the global styles content with the new colors.
+					$global_styles_content['settings']['color']['palette']['theme'] = $existing_colors;
+
+					// Step 7: Save the updated global styles back to the post.
+					wp_update_post(
+						array(
+							'ID'           => $global_styles_post_id,
+							'post_content' => wp_json_encode( $global_styles_content ),
+						)
+					);
+				}
+			}
+			wp_reset_postdata(); // Reset the query.
+		}
+	}
+
+	/**
+	 * Sync Global Fonts.
+	 */
+	private function sync_global_fonts() {
+		$theme_name    = get_stylesheet();
+		$option_name   = 'gutenverse-global-variable-font-' . $theme_name;
+		$default_fonts = $this->default_font_variable();
+		$global_fonts  = get_option( $option_name );
+
+		if ( ! is_array( $global_fonts ) ) {
+			update_option( $option_name, $default_fonts );
+
+			return;
+		}
+
+		$existing_keys = array();
+		$has_changes   = false;
+
+		foreach ( $global_fonts as $font ) {
+			$font_key = $this->get_font_sync_key( $font );
+
+			if ( $font_key ) {
+				$existing_keys[] = $font_key;
+			}
+		}
+
+		foreach ( $default_fonts as $font ) {
+			$font_key = $this->get_font_sync_key( $font );
+
+			if ( $font_key && in_array( $font_key, $existing_keys, true ) ) {
+				continue;
+			}
+
+			$global_fonts[] = $font;
+			$has_changes    = true;
+
+			if ( $font_key ) {
+				$existing_keys[] = $font_key;
+			}
+		}
+
+		if ( $has_changes ) {
+			update_option( $option_name, $global_fonts );
+		}
+	}
+
+	/**
+	 * Get font sync key.
+	 *
+	 * @param array $font Font item.
+	 *
+	 * @return string
+	 */
+	private function get_font_sync_key( $font ) {
+		if ( ! empty( $font['slug'] ) ) {
+			return (string) $font['slug'];
+		}
+
+		if ( ! empty( $font['id'] ) ) {
+			return (string) $font['id'];
+		}
+
+		if ( ! empty( $font['name'] ) ) {
+			return sanitize_title( $font['name'] );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Setup theme.
+	 */
+	public function setup_theme() {
+		load_theme_textdomain( 'startupzy', get_template_directory() . '/languages' );
 	}
 
 	/**
@@ -90,7 +286,25 @@ class Init {
 	 * @return string
 	 */
 	public function change_stylesheet_directory() {
-		return STARTUPZY_DIR . 'gutenverse-files';
+		return STARTUPZY_DIR . 'gutenverse-files/';
+	}
+
+	/**
+	 * Initialize Instance.
+	 */
+	public function init_instance() {
+		new Asset_Enqueue();
+		new Plugin_Notice();
+	}
+
+	/**
+	 * Notice Closed
+	 */
+	public function notice_closed() {
+		if ( isset( $_POST['nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'startupzy_admin_notice' ) ) {
+			update_user_meta( get_current_user_id(), 'gutenverse_install_notice', 'true' );
+		}
+		die;
 	}
 
 	/**
@@ -153,7 +367,21 @@ class Init {
 			$initial_font = get_option( 'gutenverse-font-init-' . $theme_name );
 
 			if ( ! $initial_font ) {
-				$config['globalVariable']['fonts'] = array_merge( $config['globalVariable']['fonts'], $this->default_font_variable() );
+				$result = array();
+				$array1 = $config['globalVariable']['fonts'];
+				$array2 = $this->default_font_variable();
+				foreach ( $array2 as $item ) { // default font.
+					$result[ $item['id'] ] = $item;
+				}
+				foreach ( $array1 as $item ) { // overwrite fonts.
+					$result[ $item['id'] ] = $item;
+				}
+				$fonts = array();
+				foreach ( $result as $key => $font ) {
+					$fonts[] = $font;
+				}
+				$config['globalVariable']['fonts'] = $fonts;
+
 				update_option( 'gutenverse-font-init-' . $theme_name, true );
 			}
 		}
@@ -168,614 +396,1459 @@ class Init {
 	 */
 	public function default_font_variable() {
 		return array(
-			array(
-				'id'   => 'h1-font',
-				'name' => 'H1 Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '60',
-						),
-						'Mobile'  => array(
-							'unit'  => 'px',
-							'point' => '32',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.2',
-						),
-					),
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'h2-font',
-				'name' => 'H2 Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '36',
-						),
-						'Mobile'  => array(
-							'unit'  => 'px',
-							'point' => '24',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.3',
-						),
-					),
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'h2-hero-font',
-				'name' => 'H2 Hero Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '40',
-						),
-						'Mobile'  => array(
-							'unit'  => 'px',
-							'point' => '30',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.2',
-						),
-					),
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'h3-font',
-				'name' => 'H3 Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '24',
-						),
-						'Mobile'  => array(
-							'unit'  => 'px',
-							'point' => '20',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.2',
-						),
-					),
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'h3-alt-font',
-				'name' => 'H3 Alt Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '22',
-						),
-						'Mobile'  => array(
-							'unit'  => 'px',
-							'point' => '20',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.2',
-						),
-					),
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'h3-big-font',
-				'name' => 'H3 Big Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '28',
-						),
-						'Mobile'  => array(
-							'unit'  => 'px',
-							'point' => '24',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.2',
-						),
-					),
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'h4-font',
-				'name' => 'H4 Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '18',
-						),
-						'Mobile'  => array(
-							'unit'  => 'px',
-							'point' => '16',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.4',
-						),
-					),
-					'weight'     => '500',
-				),
-			),
-			array(
-				'id'   => 'h5-font',
-				'name' => 'H5/Accent Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '14',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.3',
-						),
-					),
-					'spacing'    => array(
-						'Desktop' => '0.15',
-					),
-					'transform'  => 'uppercase',
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'h6-font',
-				'name' => 'H6 Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '16',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.3',
-						),
-					),
-					'weight'     => '400',
-				),
-			),
-			array(
-				'id'   => 'body-font',
-				'name' => 'Body Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Heebo',
-						'value' => 'Heebo',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '16',
-						),
-						'Mobile'  => array(
-							'unit'  => 'px',
-							'point' => '14',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.7',
-						),
-					),
-					'weight'     => '300',
-				),
-			),
-			array(
-				'id'   => 'button-font',
-				'name' => 'Button Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '13',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1',
-						),
-					),
-					'spacing'    => array(
-						'Desktop' => '0.15',
-					),
-					'transform'  => 'uppercase',
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'button-2-font',
-				'name' => 'Button 2 Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '11',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1',
-						),
-					),
-					'spacing'    => array(
-						'Desktop' => '0.15',
-					),
-					'transform'  => 'uppercase',
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'button-header-font',
-				'name' => 'Button Header Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '12',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1',
-						),
-					),
-					'spacing'    => array(
-						'Desktop' => '0.15',
-					),
-					'transform'  => 'uppercase',
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'nav-menu-font',
-				'name' => 'Nav Menu Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '12',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1',
-						),
-					),
-					'spacing'    => array(
-						'Desktop' => '0.15',
-					),
-					'transform'  => 'uppercase',
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'testimonial-font',
-				'name' => 'Testimonial Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Heebo',
-						'value' => 'Heebo',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '16',
-						),
-						'Tablet'  => array(
-							'unit'  => 'px',
-							'point' => '14',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.5',
-						),
-					),
-					'style'      => 'italic',
-					'weight'     => '400',
-				),
-			),
-			array(
-				'id'   => '404-font',
-				'name' => '404 Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '160',
-						),
-						'Mobile'  => array(
-							'unit'  => 'px',
-							'point' => '84',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.2',
-						),
-					),
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'list-font',
-				'name' => 'List Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Heebo',
-						'value' => 'Heebo',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '16',
-						),
-						'Mobile'  => array(
-							'unit'  => 'px',
-							'point' => '14',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.7',
-						),
-					),
-					'weight'     => '400',
-				),
-			),
-			array(
-				'id'   => 'body-2-font',
-				'name' => 'Body Text 2 Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Heebo',
-						'value' => 'Heebo',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '14',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.7',
-						),
-					),
-					'weight'     => '400',
-				),
-			),
-			array(
-				'id'   => 'italic-font',
-				'name' => 'Italic Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Heebo',
-						'value' => 'Heebo',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '16',
-						),
-						'Mobile'  => array(
-							'unit'  => 'px',
-							'point' => '14',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.7',
-						),
-					),
-					'style'      => 'italic',
-					'weight'     => '400',
-				),
-			),
-			array(
-				'id'   => 'price-font',
-				'name' => 'Price Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '42',
-						),
-						'Mobile'  => array(
-							'unit'  => 'px',
-							'point' => '36',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.2',
-						),
-					),
-					'weight'     => '600',
-				),
-			),
-			array(
-				'id'   => 'text-light-font',
-				'name' => 'Text Light Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Heebo',
-						'value' => 'Heebo',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '14',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '1.7',
-						),
-					),
-					'weight'     => '300',
-				),
-			),
-			array(
-				'id'   => 'comment-button-font',
-				'name' => 'Comment Button Font',
-				'font' => array(
-					'font'       => array(
-						'label' => 'Helvetica',
-						'value' => 'Helvetica',
-						'type'  => 'google',
-					),
-					'size'       => array(
-						'Desktop' => array(
-							'unit'  => 'px',
-							'point' => '13',
-						),
-					),
-					'lineHeight' => array(
-						'Desktop' => array(
-							'unit'  => 'em',
-							'point' => '2.1',
-						),
-					),
-					'spacing'    => array(
-						'Desktop' => '0.15',
-					),
-					'transform'  => 'uppercase',
-					'weight'     => '600',
-				),
-			),
+            array (
+  'id' => 'gv-font-primary',
+  'name' => 'H1 Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '60',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '32',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-secondary',
+  'name' => 'H2 Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '36',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '24',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.3',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-primary-small',
+  'name' => 'H2 Hero Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '40',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '30',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-feature',
+  'name' => 'H3 Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '24',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '20',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-feature-secondary',
+  'name' => 'H3 Alt Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '22',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '20',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-feature-tertiary',
+  'name' => 'H3 Big Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '28',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '24',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-meta',
+  'name' => 'H4 Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '18',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '16',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.4',
+      ),
+    ),
+    'weight' => '500',
+  ),
+),array (
+  'id' => 'gv-font-subheading',
+  'name' => 'H5/Accent Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.3',
+      ),
+    ),
+    'spacing' => 
+    array (
+      'Desktop' => '0.15',
+    ),
+    'transform' => 'uppercase',
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-meta-secondary',
+  'name' => 'H6 Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '16',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.3',
+      ),
+    ),
+    'weight' => '400',
+  ),
+),array (
+  'id' => 'gv-font-text',
+  'name' => 'Body Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '16',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.7',
+      ),
+    ),
+    'weight' => '300',
+  ),
+),array (
+  'id' => 'gv-font-button-secondary',
+  'name' => 'Button Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '13',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1',
+      ),
+    ),
+    'spacing' => 
+    array (
+      'Desktop' => '0.15',
+    ),
+    'transform' => 'uppercase',
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-button-tertiary',
+  'name' => 'Button 2 Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '11',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1',
+      ),
+    ),
+    'spacing' => 
+    array (
+      'Desktop' => '0.15',
+    ),
+    'transform' => 'uppercase',
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-text-nav',
+  'name' => 'Button Header Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '12',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1',
+      ),
+    ),
+    'spacing' => 
+    array (
+      'Desktop' => '0.15',
+    ),
+    'transform' => 'uppercase',
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'nav-menu-font',
+  'name' => 'Nav Menu Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '12',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1',
+      ),
+    ),
+    'spacing' => 
+    array (
+      'Desktop' => '0.15',
+    ),
+    'transform' => 'uppercase',
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-form-label',
+  'name' => 'Testimonial Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '16',
+      ),
+      'Tablet' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.5',
+      ),
+    ),
+    'style' => 'italic',
+    'weight' => '400',
+  ),
+),array (
+  'id' => 'gv-font-heading-404',
+  'name' => '404 Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '160',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '84',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-text-list',
+  'name' => 'List Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '16',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.7',
+      ),
+    ),
+    'weight' => '400',
+  ),
+),array (
+  'id' => 'gv-font-text-small-secondary',
+  'name' => 'Body Text 2 Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.7',
+      ),
+    ),
+    'weight' => '400',
+  ),
+),array (
+  'id' => 'gv-font-text-italic',
+  'name' => 'Italic Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '16',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.7',
+      ),
+    ),
+    'style' => 'italic',
+    'weight' => '400',
+  ),
+),array (
+  'id' => 'gv-font-pricing-number',
+  'name' => 'Price Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '42',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '36',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-text-small',
+  'name' => 'Text Light Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.7',
+      ),
+    ),
+    'weight' => '300',
+  ),
+),array (
+  'id' => 'gv-font-comment-button',
+  'name' => 'Comment Button Font (Legacy)',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '13',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '2.1',
+      ),
+    ),
+    'spacing' => 
+    array (
+      'Desktop' => '0.15',
+    ),
+    'transform' => 'uppercase',
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-primary',
+  'name' => 'Primary',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '60',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '32',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-secondary',
+  'name' => 'Secondary',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '36',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '24',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.3',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-feature',
+  'name' => 'Feature',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '24',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '20',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-feature-secondary',
+  'name' => 'Feature Secondary',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '22',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '20',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-feature-tertiary',
+  'name' => 'Feature Tertiary',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '28',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '24',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-meta',
+  'name' => 'Meta',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '18',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '16',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.4',
+      ),
+    ),
+    'weight' => '500',
+  ),
+),array (
+  'id' => 'gv-font-meta-secondary',
+  'name' => 'Meta Secondary',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '16',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.3',
+      ),
+    ),
+    'weight' => '400',
+  ),
+),array (
+  'id' => 'gv-font-subheading',
+  'name' => 'Subheading',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.3',
+      ),
+    ),
+    'spacing' => 
+    array (
+      'Desktop' => '0.15',
+    ),
+    'transform' => 'uppercase',
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-text',
+  'name' => 'Text',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '16',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.7',
+      ),
+    ),
+    'weight' => '300',
+  ),
+),array (
+  'id' => 'gv-font-text-small',
+  'name' => ' Text Small',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.7',
+      ),
+    ),
+    'weight' => '300',
+  ),
+),array (
+  'id' => 'gv-font-text-small-secondary',
+  'name' => 'Text Small Secondary',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.7',
+      ),
+    ),
+    'weight' => '400',
+  ),
+),array (
+  'id' => 'gv-font-button-primary',
+  'name' => 'Button Primary',
+  'font' => 
+  array (
+  ),
+),array (
+  'id' => 'gv-font-button-secondary',
+  'name' => 'Button Secondary',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '13',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1',
+      ),
+    ),
+    'spacing' => 
+    array (
+      'Desktop' => '0.15',
+    ),
+    'transform' => 'uppercase',
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-button-tertiary',
+  'name' => 'Button Tertiary',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '11',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1',
+      ),
+    ),
+    'spacing' => 
+    array (
+      'Desktop' => '0.15',
+    ),
+    'transform' => 'uppercase',
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-form-label',
+  'name' => 'Form Label',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '16',
+      ),
+      'Tablet' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.5',
+      ),
+    ),
+    'style' => 'italic',
+    'weight' => '400',
+  ),
+),array (
+  'id' => 'gv-font-primary-small',
+  'name' => 'Primary Small',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '40',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '30',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-text-nav',
+  'name' => 'Text Nav',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '12',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1',
+      ),
+    ),
+    'spacing' => 
+    array (
+      'Desktop' => '0.15',
+    ),
+    'transform' => 'uppercase',
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-text-italic',
+  'name' => 'Text Italic',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '16',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.7',
+      ),
+    ),
+    'style' => 'italic',
+    'weight' => '400',
+  ),
+),array (
+  'id' => 'gv-font-text-list',
+  'name' => 'Text List',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '16',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.7',
+      ),
+    ),
+    'weight' => '400',
+  ),
+),array (
+  'id' => 'gv-font-pricing-number',
+  'name' => 'Pricing Number',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '42',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '36',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-heading-404',
+  'name' => 'Heading 404',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '160',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+        'point' => '84',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+    ),
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-comment-button',
+  'name' => 'Comment Button Font',
+  'font' => 
+  array (
+    'font' => 
+    array (
+      'label' => 'Helvetica',
+      'value' => 'Helvetica',
+      'type' => 'google',
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '13',
+      ),
+    ),
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '2.1',
+      ),
+    ),
+    'spacing' => 
+    array (
+      'Desktop' => '0.15',
+    ),
+    'transform' => 'uppercase',
+    'weight' => '600',
+  ),
+),array (
+  'id' => 'gv-font-text-hero',
+  'name' => 'Text Hero',
+  'font' => 
+  array (
+  ),
+),
 		);
 	}
+
+
 
 	/**
 	 * Add Template to Editor.
@@ -788,11 +1861,15 @@ class Init {
 	public function add_template( $template_files, $template_type ) {
 		if ( 'wp_template' === $template_type ) {
 			$new_templates = array(
-				'about',
-				'blog',
-				'contact',
-				'faq',
-				'service',
+				'404',
+				'archive',
+				'blank-canvas',
+				'index',
+				'page',
+				'search',
+				'single',
+				'home',
+				'full-width'
 			);
 
 			foreach ( $new_templates as $template ) {
@@ -801,6 +1878,7 @@ class Init {
 					'path'  => $this->change_stylesheet_directory() . "/templates/{$template}.html",
 					'theme' => get_template(),
 					'type'  => 'wp_template',
+					'title' => ucfirst( str_replace( '-', ' ', $template ) ),
 				);
 			}
 		}
@@ -819,34 +1897,28 @@ class Init {
 	 */
 	public function template_path( $template_file, $theme_slug, $template_slug ) {
 		switch ( $template_slug ) {
-			case '404':
-				return $this->change_stylesheet_directory() . '/templates/404.html';
-			case 'about':
-				return $this->change_stylesheet_directory() . '/templates/about.html';
-			case 'archive':
-				return $this->change_stylesheet_directory() . '/templates/archive.html';
-			case 'blog':
-				return $this->change_stylesheet_directory() . '/templates/blog.html';
-			case 'contact':
-				return $this->change_stylesheet_directory() . '/templates/contact.html';
-			case 'faq':
-				return $this->change_stylesheet_directory() . '/templates/faq.html';
-			case 'front-page':
-				return $this->change_stylesheet_directory() . '/templates/front-page.html';
-			case 'index':
-				return $this->change_stylesheet_directory() . '/templates/index.html';
-			case 'page':
-				return $this->change_stylesheet_directory() . '/templates/page.html';
-			case 'search':
-				return $this->change_stylesheet_directory() . '/templates/search.html';
-			case 'service':
-				return $this->change_stylesheet_directory() . '/templates/service.html';
-			case 'single':
-				return $this->change_stylesheet_directory() . '/templates/single.html';
+            case 'footer':
+					return $this->change_stylesheet_directory() . '/parts/footer.html';
 			case 'header':
-				return $this->change_stylesheet_directory() . '/parts/header.html';
-			case 'footer':
-				return $this->change_stylesheet_directory() . '/parts/footer.html';
+					return $this->change_stylesheet_directory() . '/parts/header.html';
+			case '404':
+					return $this->change_stylesheet_directory() . '/templates/404.html';
+			case 'archive':
+					return $this->change_stylesheet_directory() . '/templates/archive.html';
+			case 'blank-canvas':
+					return $this->change_stylesheet_directory() . '/templates/blank-canvas.html';
+			case 'index':
+					return $this->change_stylesheet_directory() . '/templates/index.html';
+			case 'page':
+					return $this->change_stylesheet_directory() . '/templates/page.html';
+			case 'search':
+					return $this->change_stylesheet_directory() . '/templates/search.html';
+			case 'single':
+					return $this->change_stylesheet_directory() . '/templates/single.html';
+			case 'home':
+					return $this->change_stylesheet_directory() . '/templates/home.html';
+			case 'full-width':
+					return $this->change_stylesheet_directory() . '/templates/full-width.html';
 		}
 
 		return $template_file;
@@ -860,559 +1932,332 @@ class Init {
 	}
 
 	/**
-	 * Register Block Style.
-	 */
-	public function register_block_styles() {
-		new Block_Styles();
-	}
-
-	/**
-	 * Register Upgrader.
-	 */
-	public function register_upgrader() {
-		new Upgrader();
-	}
-
-	/**
-	 * Excerpt Elipsis.
-	 *
-	 * @param string $more .
-	 *
-	 * @return string
-	 */
-	public function excerpt_elipsis( $more ) {
-		if ( is_admin() ) {
-			return $more;
-		}
-
-		return '';
-	}
-
-	/**
-	 * Excerpt Length.
-	 *
-	 * @param int $length .
-	 *
-	 * @return int
-	 */
-	public function excerpt_length( $length ) {
-		if ( is_admin() ) {
-			return $length;
-		}
-
-		return 100;
-	}
-
-	/**
-	 * Notice Closed
-	 */
-	public function notice_closed() {
-		if ( isset( $_POST['nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'startupzy_admin_notice' ) ) {
-			update_user_meta( get_current_user_id(), 'gutenverse_install_notice', 'true' );
-		}
-		die;
-	}
-
-	/**
-	 * Show notification to install Gutenverse Plugin.
-	 */
-	public function notice_install_plugin() {
-		// Skip if gutenverse block activated.
-		if ( defined( 'GUTENVERSE' ) ) {
-			return;
-		}
-
-		// Skip if gutenverse pro activated.
-		if ( defined( 'GUTENVERSE_PRO' ) ) {
-			return;
-		}
-
-		$screen = get_current_screen();
-		if ( isset( $screen->parent_file ) && 'themes.php' === $screen->parent_file && 'appearance_page_startupzy-dashboard' === $screen->id ) {
-			return;
-		}
-
-		if ( isset( $screen->parent_file ) && 'plugins.php' === $screen->parent_file && 'update' === $screen->id ) {
-			return;
-		}
-
-		if ( 'true' === get_user_meta( get_current_user_id(), 'gutenverse_install_notice', true ) ) {
-			return;
-		}
-
-		$all_plugin = get_plugins();
-		$plugins    = $this->theme_config()['plugins'];
-		$actions    = array();
-
-		foreach ( $plugins as $plugin ) {
-			$slug   = $plugin['slug'];
-			$path   = "$slug/$slug.php";
-			$active = is_plugin_active( $path );
-
-			if ( isset( $all_plugin[ $path ] ) ) {
-				if ( $active ) {
-					$actions[ $slug ] = 'active';
-				} else {
-					$actions[ $slug ] = 'inactive';
-				}
-			} else {
-				$actions[ $slug ] = '';
-			}
-		}
-
-		$button_text = __( 'Install Required Plugins', 'startupzy' );
-		$button_link = wp_nonce_url( self_admin_url( 'themes.php?page=startupzy-dashboard' ), 'install-plugin_gutenverse' );
-		?>
-		<style>
-			.install-gutenverse-plugin-notice {
-				border: 1px solid #E6E6EF;
-				position: relative;
-				overflow: hidden;
-				padding: 0 !important;
-				margin-bottom: 30px !important;
-				background: url( <?php echo esc_url( STARTUPZY_URI . '/assets/img/background-banner.png' ); ?> );
-				background-size: cover;
-				background-position: center;
-			}
-
-			.install-gutenverse-plugin-notice .gutenverse-notice-content {
-				display: flex;
-				align-items: center;
-			}
-
-			.gutenverse-notice-text, .gutenverse-notice-image {
-				width: 50%;
-			}
-
-			.gutenverse-notice-text {
-				padding: 40px 0 40px 40px;
-			}
-
-			.install-gutenverse-plugin-notice img {
-				max-width: 100%;
-				display: flex;
-			}
-
-			.install-gutenverse-plugin-notice:after {
-				content: "";
-				position: absolute;
-				left: 0;
-				top: 0;
-				height: 100%;
-				width: 5px;
-				display: block;
-				background: linear-gradient(to bottom, #68E4F4, #4569FF, #F045FF);
-			}
-
-			.install-gutenverse-plugin-notice .notice-dismiss {
-				top: 20px;
-				right: 20px;
-				padding: 0;
-				background: white;
-				border-radius: 6px;
-			}
-
-			.install-gutenverse-plugin-notice .notice-dismiss:before {
-				content: "\f335";
-				font-size: 17px;
-				width: 25px;
-				height: 25px;
-				line-height: 25px;
-				border: 1px solid #E6E6EF;
-				border-radius: 3px;
-			}
-
-			.install-gutenverse-plugin-notice h3 {
-				margin-top: 5px;
-				margin-bottom: 15px;
-				font-weight: 600;
-				font-size: 25px;
-				line-height: 1.4em;
-			}
-
-			.install-gutenverse-plugin-notice h3 span {
-				font-weight: 700;
-				background-clip: text !important;
-				-webkit-text-fill-color: transparent;
-				background: linear-gradient(80deg, rgba(208, 77, 255, 1) 0%,rgba(69, 105, 255, 1) 48.8%,rgba(104, 228, 244, 1) 100%);
-			}
-
-			.install-gutenverse-plugin-notice p {
-				font-size: 13px;
-				font-weight: 300;
-				margin: 5px 100px 20px 0 !important;
-			}
-
-			.install-gutenverse-plugin-notice .gutenverse-bottom {
-				display: flex;
-				align-items: center;
-				margin-top: 30px;
-			}
-
-			.install-gutenverse-plugin-notice a {
-				text-decoration: none;
-				margin-right: 20px;
-			}
-
-			.install-gutenverse-plugin-notice a.gutenverse-button {
-				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-				text-decoration: none;
-				cursor: pointer;
-				font-size: 12px;
-				line-height: 18px;
-				border-radius: 5px;
-				background: #3B57F7;
-				color: #fff;
-				padding: 8px 30px;
-				font-weight: 500;
-				background: linear-gradient(to left, #68E4F4, #4569FF, #F045FF);
-			}
-
-			#gutenverse-install-plugin.loader:after {
-				display: block;
-				content: '';
-				border: 5px solid white;
-				border-radius: 50%;
-				border-top: 5px solid rgba(255, 255, 255, 0);
-				width: 10px;
-				height: 10px;
-				-webkit-animation: spin 2s linear infinite;
-				animation: spin 2s linear infinite;
-			}
-
-			@-webkit-keyframes spin {
-				0% {
-					-webkit-transform: rotate(0deg);
-				}
-				100% {
-					-webkit-transform: rotate(360deg);
-				}
-			}
-
-			@keyframes spin {
-				0% {
-					transform: rotate(0deg);
-				}
-				100% {
-					transform: rotate(360deg);
-				}
-			}
-
-			@media screen and (max-width: 1024px) {
-				.gutenverse-notice-text {
-					width: 100%;
-				}
-
-				.gutenverse-notice-image {
-					display: none;
-				}
-			}
-		</style>
-		<script>
-		var promises = [];
-		var actions = <?php echo wp_json_encode( $actions ); ?>;
-
-		function sequenceInstall (plugins, index = 0) {
-			if (plugins[index]) {
-				var plugin = plugins[index];
-
-				switch (actions[plugin?.slug]) {
-					case 'active':
-						break;
-					case 'inactive':
-						var path = plugin?.slug + '/' + plugin?.slug;
-						promises.push(
-							new Promise((resolve) => {
-								fetch(wpApiSettings.root + 'wp/v2/plugins/' + path, {									
-									method: 'POST',
-									headers: {
-										"X-WP-Nonce": wpApiSettings.nonce,
-										'Content-Type': 'application/json',
-									},
-									body: JSON.stringify(
-										{
-											status: 'active'
-										}
-									)
-								}).then(() => {
-									sequenceInstall(plugins, index + 1);
-									resolve(plugin);
-								}).catch((error) => {
-									alert('Plugin Install Failed')	
-								});
-							})
-						);
-						break;
-					default:
-						promises.push(
-							new Promise((resolve) => {
-								fetch(wpApiSettings.root + 'wp/v2/plugins', {									
-									method: 'POST',
-									headers: {
-										"X-WP-Nonce": wpApiSettings.nonce,
-										'Content-Type': 'application/json',
-									},
-									body: JSON.stringify(
-										{
-											slug: plugin?.slug,
-											status: 'active'
-										}
-									)
-								}).then(() => {
-									sequenceInstall(plugins, index + 1);
-									resolve(plugin);
-								}).catch((error) => {
-									alert('Plugin Install Failed')	
-								});
-							})
-						);
-						break;
-				}
-			}
-
-			return;
-		};
-
-		jQuery( function( $ ) {
-			$( 'div.notice.install-gutenverse-plugin-notice' ).on( 'click', 'button.notice-dismiss', function( event ) {
-				event.preventDefault();
-				$.post( ajaxurl, {
-					action: 'startupzy_set_admin_notice_viewed',
-					nonce: '<?php echo esc_html( wp_create_nonce( 'startupzy_admin_notice' ) ); ?>',
-				} );
-			} );
-
-			$("#gutenverse-install-plugin").on('click', function(e) {
-				var hasFinishClass = $(this).hasClass('finished');
-				var hasLoaderClass = $(this).hasClass('loader');
-
-				if(!hasFinishClass) {
-					e.preventDefault();
-				}
-
-				if(!hasLoaderClass && !hasFinishClass) {
-					promises = [];
-					var plugins = <?php echo wp_json_encode( $plugins ); ?>;
-					$(this).addClass('loader').text('');
-
-					sequenceInstall(plugins);
-					Promise.all(promises).then(() => {						
-						$(this).removeClass('loader').addClass('finished').text('Visit Theme Dashboard');
-					});
-				}
-			});
-		} );
-		</script>
-		<div class="notice is-dismissible install-gutenverse-plugin-notice">
-			<div class="gutenverse-notice-inner">
-				<div class="gutenverse-notice-content">
-					<div class="gutenverse-notice-text">
-						<h3><?php esc_html_e( 'Take Your Website To New Height with', 'startupzy' ); ?> <span>Gutenverse!</span></h3> 
-						<p><?php esc_html_e( 'Startupzy theme work best with Gutenverse plugin. By installing Gutenverse plugin you may access Startupzy templates built with Gutenverse and get access to more than 40 free blocks, hundred free Layout and Section.', 'startupzy' ); ?></p>
-						<div class="gutenverse-bottom">
-							<a class="gutenverse-button" id="gutenverse-install-plugin" href="<?php echo esc_url( $button_link ); ?>">
-								<?php echo esc_html( $button_text ); ?>
-							</a>
-						</div>
-					</div>
-					<div class="gutenverse-notice-image">
-						<img src="<?php echo esc_url( STARTUPZY_URI . '/assets/img/banner-install-gutenverse-2.png' ); ?>"/>
-					</div>
-				</div>
-			</div>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Add Menu
-	 */
-	public function admin_menu() {
-		add_theme_page(
-			'Startupzy Dashboard',
-			'Startupzy Dashboard',
-			'manage_options',
-			'startupzy-dashboard',
-			array( $this, 'load_startupzy_dashboard' ),
-			1
-		);
-	}
-
-	/**
-	 * Startupzy Template page
-	 */
-	public function load_startupzy_dashboard() {
-		?>
-		<?php if ( defined( 'GUTENVERSE_VERSION' ) && version_compare( GUTENVERSE_VERSION, '1.1.1', '<=' ) ) { ?>
-		<div class="notice is-dismissible">
-			<span>
-			<?php echo esc_html_e( 'Please install newer version of Gutenverse plugin! (v1.1.2 and above)', 'startupzy' ); ?>
-			</span>
-		</div>
-		<?php } ?>
-		<?php do_action( 'gutenverse_after_install_notice' ); ?>
-		<div id="gutenverse-theme-dashboard"></div>
-		<?php
-	}
-
-	/**
-	 * Add theme template
-	 */
-	public function add_theme_templates() {
-		add_editor_style( 'block-style.css' );
-	}
-
-	/**
-	 * Theme setup.
-	 */
-	public function theme_setup() {
-		load_theme_textdomain( 'startupzy', STARTUPZY_DIR . '/languages' );
-
-		add_theme_support( 'wp-block-styles' );
-		add_theme_support( 'automatic-feed-links' );
-		add_theme_support( 'title-tag' );
-		add_theme_support( 'post-thumbnails' );
-		add_theme_support( 'editor-styles' );
-
-		register_nav_menus(
-			array(
-				'primary' => esc_html__( 'Primary', 'startupzy' ),
-			)
-		);
-
-		add_editor_style(
-			array(
-				'./assets/css/core-add.css',
-			)
-		);
-
-		add_theme_support(
-			'html5',
-			array(
-				'search-form',
-				'comment-form',
-				'comment-list',
-				'gallery',
-				'caption',
-				'style',
-				'script',
-			)
-		);
-
-		add_theme_support( 'customize-selective-refresh-widgets' );
-	}
-
-	/**
-	 * Set the content width.
-	 */
-	public function content_width() {
-		$GLOBALS['content_width'] = apply_filters( 'gutenverse_content_width', 960 );
-	}
-
-	/**
 	 * Enqueue scripts and styles.
+	 *
+	 * @param string $hook_suffix Hook suffix.
 	 */
-	public function enqueue_scripts() {
-		wp_enqueue_style( 'startupzy-style', get_stylesheet_uri(), array(), STARTUPZY_VERSION );
-		wp_add_inline_style( 'startupzy-style', $this->load_font_styles() );
-
-		// enqueue additional core css.
-		wp_enqueue_style( 'startupzy-core-add', STARTUPZY_URI . '/assets/css/core-add.css', array(), STARTUPZY_VERSION );
-
-		// enqueue core animation.
-		wp_enqueue_script( 'startupzy-animate', STARTUPZY_URI . '/assets/js/index.js', array(), STARTUPZY_VERSION, true );
-		wp_enqueue_style( 'startupzy-animate', STARTUPZY_URI . '/assets/css/animation.css', array(), STARTUPZY_VERSION );
-
-		if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
-			wp_enqueue_script( 'comment-reply' );
-		}
-	}
-
-	/**
-	 * Enqueue scripts and styles.
-	 */
-	public function backend_scripts() {
-		$screen = get_current_screen();
-
-		wp_enqueue_style(
-			'startupzy-notice',
-			STARTUPZY_URI . '/assets/css/notice.css',
-			array(),
-			STARTUPZY_URI
-		);
-
-		wp_enqueue_script( 'wp-api' );
-
-		if ( $screen->id === 'appearance_page_startupzy-dashboard' ) {
+	public function dashboard_scripts( $hook_suffix ) {
+		
+					if ( 'appearance_page_startupzy-dashboard' !== $hook_suffix && 'admin_page_gutenverse-onboarding-wizard' !== $hook_suffix ) {
+						return;
+					}
+		
+		if ( is_admin() ) {
 			// enqueue css.
-			wp_enqueue_style(
-				'startupzy-dashboard',
-				STARTUPZY_URI . '/assets/css/dashboard.css',
-				array(),
-				STARTUPZY_VERSION
-			);
+			
+						wp_enqueue_style(
+							'startupzy-dashboard',
+							get_template_directory_uri() . '/assets/css/theme-dashboard.css',
+							array(),
+							STARTUPZY_VERSION
+						);
+					
+		$dashboard_includes = include get_template_directory() . '/assets/dependencies/theme-dashboard.asset.php';
+		
+						wp_enqueue_script(
+							'startupzy-dashboard',
+							get_template_directory_uri() . '/assets/js/theme-dashboard.js',
+							$dashboard_includes["dependencies"],
+							STARTUPZY_VERSION,
+							true
+						);
+					
+		
+					wp_enqueue_style(
+						'startupzy-dashboard-inter-font',
+						get_template_directory_uri() . '/assets/fonts/inter/inter.css',
+						[],
+						null
+					);
 
-			// enqueue js.
-			wp_enqueue_script(
-				'startupzy-dashboard',
-				STARTUPZY_URI . '/assets/js/dashboard.js',
-				array( 'wp-api-fetch' ),
-				STARTUPZY_VERSION,
-				true
-			);
+			wp_enqueue_script('wp-api-fetch');
 
-			wp_localize_script( 'startupzy-dashboard', 'GutenverseThemeConfig', $this->theme_config() );
+			wp_localize_script( 'wp-api-fetch', 'GutenThemeConfig', $this->theme_config() );
 		}
+	}
+
+	/**
+	 * Check if plugin is installed.
+	 *
+	 * @param string $plugin_slug plugin slug.
+	 * 
+	 * @return boolean
+	 */
+	public function is_installed( $plugin_slug ) {
+		$all_plugins = get_plugins();
+		foreach ( $all_plugins as $plugin_file => $plugin_data ) {
+			$plugin_dir = dirname($plugin_file);
+
+			if ($plugin_dir === $plugin_slug) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
 	 * Register static data to be used in theme's js file
 	 */
 	public function theme_config() {
-		return array(
-			'demo'    => esc_url( 'https:/gutenverse.com/demo?name=startupzy' ),
-			'pages'   => array(
-				'home'     => STARTUPZY_URI . '/assets/img/page-home.webp',
-				'about'    => STARTUPZY_URI . '/assets/img/page-about.webp',
-				'services' => STARTUPZY_URI . '/assets/img/page-services.webp',
-				'contact'  => STARTUPZY_URI . '/assets/img/page-contact.webp',
-				'blog'     => STARTUPZY_URI . '/assets/img/page-blog.webp',
+		global $pagenow;
+		include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+		$active_plugins = get_option( 'active_plugins' );
+		$plugins = array();
+		$installed_plugins = get_plugins();
+		$installed_plugin_versions = array();
+		foreach ( $active_plugins as $active ) {
+			$plugin_name = explode( '/', $active )[0];
+			$plugins[]   = $plugin_name;
+			$installed_plugin_versions[ $plugin_name ] = isset( $installed_plugins[ $active ] ) ? $installed_plugins[ $active ]['Version'] : '1.0.0';
+		}
+
+		$config = array(
+			'home_url'      => home_url(),
+			'active_plugins'=> $active_plugins,
+			'version'       => STARTUPZY_VERSION,
+			'images'        => get_template_directory_uri() . '/assets/img/',
+			'title'         => esc_html__( 'Startupzy', 'startupzy' ),
+			'description'   => esc_html__( 'Startupzy is a Startup & Technology Company WordPress Block Theme designed for modern businesses that want to build a sleek and professional online presence. Built with full site editing and powered by Gutenverse, this theme provides a flexible and intuitive platform to showcase products, services, and innovative solutions with a clean and contemporary design. Whether you are launching a new startup or managing a growing tech company, Startupzy helps you present your brand with clarity and impact. It is ideal for SaaS businesses, tech startups, software companies, digital agencies, and IT service providers looking to expand their reach. With responsive layouts, customizable block patterns, and well-structured pages, you can easily highlight features, case studies, pricing plans, and client testimonials. Optimized for performance and usability, Startupzy allows you to create a powerful website that reflects your vision and expertise in the Startup & Technology Company space. If you are looking for a scalable and modern solution, Startupzy is a reliable Startup & Technology Company WordPress theme to support your business growth.', 'startupzy' ),
+			'pluginTitle'   => esc_html__( 'Plugin Requirement', 'startupzy' ),
+			'pluginDesc'    => esc_html__( 'This theme require some plugins. Please make sure all the plugin below are installed and activated.', 'startupzy' ),
+			'note'          => '',
+			'note2'         => '',
+			'demo'          => '',
+			'demoUrl'       => esc_url( 'https://gutenverse.com/demo?name=startupzy' ),
+			'install'       => '',
+			'installText'   => esc_html__( 'Install Gutenverse Plugin', 'startupzy' ),
+			'activateText'  => esc_html__( 'Activate Gutenverse Plugin', 'startupzy' ),
+			'doneText'      => esc_html__( 'Gutenverse Plugin Installed', 'startupzy' ),
+			'dashboardPage' => admin_url( 'themes.php?page=startupzy-dashboard' ),
+			'logo'          => trailingslashit( get_template_directory_uri() ) . 'assets/img/logo-startupzy-2-1.webp',
+			'slug'          => 'startupzy',
+			'upgradePro'    => esc_url( 'https://gutenverse.com/pricing' ),
+			'supportLink'   => esc_url( 'https://wordpress.org/support/theme/startupzy-lite/ ' ),
+			'libraryApi'    => esc_url( 'https://gutenverse.com//wp-json/gutenverse-server/v1' ),
+			'docsLink'      => esc_url( 'https://gutenverse.com/docs/ ' ),
+			'pages'         => array(
+				
 			),
-			'domain'  => 'startupzy',
-			'plugins' => array(
+			'plugins'       => array(
 				array(
-					'slug' => 'gutenverse',
-					'name' => 'Gutenverse',
+					'slug'       		=> 'gutenverse',
+					'title'      		=> esc_html__( 'Gutenverse &#8211; Ultimate WordPress FSE Blocks Addons &amp; Ecosystem', 'startupzy' ),
+					'short_desc' 		=> esc_html__( 'GUTENVERSE – GUTENBERG BLOCKS AND WEBSITE BUILDER FOR SITE EDITOR, TEMPLATE LIBRARY, POPUP BUILDER, ADVANCED ANIMATION EFFECTS, COMPLETE FEATURE ECOSYSTEM, 45+ FREE USER-FRIENDLY BLOCKS', 'startupzy' ),
+					'active'    		=> in_array( 'gutenverse', $plugins, true ),
+					'installed'  		=> $this->is_installed( 'gutenverse' ),
+					'req_version'    	=> '3.6.0',
+					'installed_version' => isset( $installed_plugins['gutenverse/gutenverse.php']['Version'] ) ? $installed_plugins['gutenverse/gutenverse.php']['Version'] : '',
+					'icons'      		=> array (
+  '1x' => 'https://ps.w.org/gutenverse/assets/icon-128x128.gif?rev=3132408',
+  '2x' => 'https://ps.w.org/gutenverse/assets/icon-256x256.gif?rev=3132408',
+),
+					'download_url'      => '',
 				),
+				array(
+					'slug'       		=> 'gutenverse-companion',
+					'title'      		=> esc_html__( 'Gutenverse Companion', 'startupzy' ),
+					'short_desc' 		=> esc_html__( 'A companion plugin designed specifically to enhance and extend the functionality of Gutenverse base themes. This plugin integrates seamlessly with the base themes, providing additional features, customization options, and advanced tools to optimize the overall user experience and streamline the development process.', 'startupzy' ),
+					'active'    		=> in_array( 'gutenverse-companion', $plugins, true ),
+					'installed'  		=> $this->is_installed( 'gutenverse-companion' ),
+					'req_version'    	=> '2.3.3',
+					'installed_version' => isset( $installed_plugins['gutenverse-companion/gutenverse-companion.php']['Version'] ) ? $installed_plugins['gutenverse-companion/gutenverse-companion.php']['Version'] : '',
+					'icons'      		=> array (
+  '1x' => 'https://ps.w.org/gutenverse-companion/assets/icon-128x128.png?rev=3162415',
+),
+					'download_url'      => '',
+				)
 			),
-		);
-	}
-
-	/**
-	 * Load Font Styles
-	 */
-	public function load_font_styles() {
-		$font_families = array(
-			'Heebo:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;1,100;1,200;1,300;1,400;1,500;1,600',
-		);
-
-		$fonts_url = add_query_arg(
-			array(
-				'family'  => implode( '&family=', $font_families ),
-				'display' => 'swap',
+			'assign'        => array(
+				
 			),
-			'https://fonts.googleapis.com/css2'
+			'dashboardData' => array(
+				'lite_template_count' => 10,
+'plus_template_count' => 10,
+'lite_block_count' => 40,
+'plus_block_count' => 80,
+'lite_page_count' => 0,
+'plus_page_count' => 7,
+'lite_pattern_count' => 25,
+'plus_pattern_count' => 32
+			),
+			'lite_plus_type' => 'wporg',
+			'pro_preview' => trailingslashit( get_template_directory_uri() ) . 'assets/img/startupzy-pro-home.webp',
+			'pro_title' => esc_html__('Startupzy Pro', 'startupzy'),
+			'upgrade_required_license' => array('professional','agency','ultimate','enterprise'),
 		);
 
-		$contents = wptt_get_webfont_url( esc_url_raw( $fonts_url ), 'woff' );
+		if ( 'themes.php' === $pagenow && isset( $_GET['page'] ) && 'startupzy-dashboard' === sanitize_key( wp_unslash( $_GET['page'] ) ) ) {
+			$admin_config = array(
+				'system' => $this->system_status(),
+			);
+			$config = array_merge( $config, $admin_config );
+		}
 
-		return "@import url({$contents});";
-	}
+		if ( isset( $config['assign'] ) && $config['assign'] ) {
+			$assign = $config['assign'];
+			foreach ( $assign as $key => $value ) {
+				$query = new \WP_Query(
+					array(
+						'post_type'      => 'page',
+						'post_status'    => 'publish',
+						'title'          => '' !== $value['page'] ? $value['page'] : $value['title'],
+						'posts_per_page' => 1,
+					)
+				);
 
-	/**
-	 * Load Editor Styles
-	 */
-	public function load_editor_styles() {
-		wp_add_inline_style( 'wp-block-library', $this->load_font_styles() );
+				if ( $query->have_posts() ) {
+					$post                     = $query->posts[0];
+					$page_template            = get_page_template_slug( $post->ID );
+					$assign[ $key ]['status'] = array(
+						'exists'         => true,
+						'using_template' => $page_template === $value['slug'],
+					);
+
+				} else {
+					$assign[ $key ]['status'] = array(
+						'exists'         => false,
+						'using_template' => false,
+					);
+				}
+
+				wp_reset_postdata();
+			}
+			$config['assign'] = $assign;
+		}
+
+		return $config;
 	}
+	
+						/**
+						 * System Status.
+						 *
+						 * @return array
+						 */
+						public function system_status() {
+							$status      = array();
+							$active_demo = get_option( 'gutenverse_companion_template_options' );
+							/** Themes */
+							$theme                    = wp_get_theme();
+							$parent                   = wp_get_theme( get_template() );
+							$status['theme_name']     = $theme->get( 'Name' );
+							$status['theme_version']  = $theme->get( 'Version' );
+							$status['is_child_theme'] = is_child_theme();
+							$status['parent_theme']   = $parent->get( 'Name' );
+							$status['parent_version'] = $parent->get( 'Version' );
+
+							$status['active_companion_demo'] = $active_demo['active_demo'] ?? esc_html__( 'You don\'t have any demo activated', 'startupzy' );
+
+							/** WordPress Environment */
+							$wp_upload_dir              = wp_upload_dir();
+							$status['home_url']         = home_url( '/' );
+							$status['site_url']         = site_url();
+							$status['login_url']        = wp_login_url();
+							$status['wp_version']       = get_bloginfo( 'version', 'display' );
+							$status['is_multisite']     = is_multisite();
+							$status['wp_debug']         = defined( 'WP_DEBUG' ) && WP_DEBUG;
+							$status['memory_limit']     = ini_get( 'memory_limit' );
+							$status['wp_memory_limit']  = WP_MEMORY_LIMIT;
+							$status['wp_language']      = get_locale();
+							$status['writeable_upload'] = wp_is_writable( $wp_upload_dir['basedir'] );
+							$status['count_category']   = wp_count_terms( 'category' );
+							$status['count_tag']        = wp_count_terms( 'post_tag' );
+
+							/** Server Environment */
+							$remote = get_transient( 'gutenverse_wp_remote_get_status_cache' );
+							if ( ! $remote ) {
+								$remote = wp_remote_get( home_url() );
+								set_transient( 'gutenverse_wp_remote_get_status_cache', $remote, 30 * MINUTE_IN_SECONDS );
+							}
+
+							$gd_support = array();
+							if ( function_exists( 'gd_info' ) ) {
+								foreach ( gd_info() as $key => $value ) {
+									$gd_support[ $key ] = $value;
+								}
+							}
+
+							$status['server_info']        = isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : '';
+							$status['php_version']        = PHP_VERSION;
+							$status['post_max_size']      = ini_get( 'post_max_size' );
+							$status['max_input_vars']     = ini_get( 'max_input_vars' );
+							$status['max_execution_time'] = ini_get( 'max_execution_time' );
+							$status['suhosin']            = extension_loaded( 'suhosin' );
+							$status['imagick']            = extension_loaded( 'imagick' );
+							$status['gd']                 = extension_loaded( 'gd' ) && function_exists( 'gd_info' );
+							$status['gd_webp']            = extension_loaded( 'gd' ) && $gd_support['WebP Support'];
+							$status['fileinfo']           = extension_loaded( 'fileinfo' ) && ( function_exists( 'finfo_open' ) || function_exists( 'mime_content_type' ) );
+							$status['curl']               = extension_loaded( 'curl' ) && function_exists( 'curl_version' );
+							$status['wp_remote_get']      = ! is_wp_error( $remote ) && $remote['response']['code'] >= 200 && $remote['response']['code'] < 300;
+
+							/** Plugins */
+							$status['plugins'] = $this->data_active_plugin();
+
+							return $status;
+						}
+						/**
+						 * Data active plugin
+						 *
+						 * @return array
+						 */
+						public function data_active_plugin() {
+							$active_plugin = array();
+
+							$plugins = array_merge(
+								array_flip( (array) get_option( 'active_plugins', array() ) ),
+								(array) get_site_option( 'active_sitewide_plugins', array() )
+							);
+
+							$plugins = array_intersect_key( get_plugins(), $plugins );
+
+							if ( count( $plugins ) > 0 ) {
+								foreach ( $plugins as $plugin ) {
+									$item                = array();
+									$item['uri']         = isset( $plugin['PluginURI'] ) ? esc_url( $plugin['PluginURI'] ) : '#';
+									$item['name']        = isset( $plugin['Name'] ) ? $plugin['Name'] : esc_html__( 'unknown', 'startupzy' );
+									$item['author_uri']  = isset( $plugin['AuthorURI'] ) ? esc_url( $plugin['AuthorURI'] ) : '#';
+									$item['author_name'] = isset( $plugin['Author'] ) ? $plugin['Author'] : esc_html__( 'unknown', 'startupzy' );
+									$item['version']     = isset( $plugin['Version'] ) ? $plugin['Version'] : esc_html__( 'unknown', 'startupzy' );
+
+									$content = esc_html__( 'by', 'startupzy' );
+
+									$active_plugin[] = array(
+										'type'            => 'status',
+										'title'           => $item['name'],
+										'content'         => $content,
+										'link'            => $item['author_uri'],
+										'link_text'       => $item['author_name'],
+										'additional_text' => $item['version'],
+									);
+								}
+							}
+
+							return $active_plugin;
+						}
+					
+			
+						/**
+						 * Add Menu
+						 */
+						public function admin_menu() {
+							add_theme_page(
+								esc_html__('Startupzy Dashboard', 'startupzy'),
+								esc_html__('Startupzy Dashboard', 'startupzy'),
+								'edit_theme_options',
+								'startupzy-dashboard',
+								array( $this, 'load_dashboard' ),
+								1
+							);
+						}
+
+						/**
+						 * Template page
+						 */
+						public function load_dashboard() {
+							?>
+								<div id='gutenverse-theme-dashboard'>
+								</div>
+							<?php
+						}
+					
 }

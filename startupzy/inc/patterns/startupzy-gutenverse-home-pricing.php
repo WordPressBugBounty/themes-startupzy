@@ -1,0 +1,102 @@
+<?php
+/**
+ * Pattern content.
+ */
+return array(
+	'title'      => __( 'Gutenverse Home Pricing', 'startupzy' ),
+	'categories' => array( 'startupzy-gutenverse' ),
+	'content'    => '<!-- wp:gutenverse/section {"width":{"Desktop":"1170"},"elementId":"guten-61Lnn0","margin":{"Desktop":[],"Tablet":[],"Mobile":[]},"padding":{"Desktop":{"unit":"px","dimension":{"top":"100","bottom":"100"}},"Tablet":{"unit":"px","dimension":{"top":"80","bottom":"80","right":"10","left":"10"}},"Mobile":{"unit":"px","dimension":{"top":"40","bottom":"40"}}},"wrapColumn":{"Desktop":false,"Tablet":false,"Mobile":true}} -->
+<!-- wp:gutenverse/column {"width":{"Desktop":100,"Mobile":null},"elementId":"guten-74OpMJ","margin":{"Desktop":[]},"padding":{"Desktop":[]}} -->
+<!-- wp:gutenverse/section {"width":{"Desktop":"1170"},"isChild":true,"gap":"no","elementId":"guten-WnllQS","verticalAlign":"center","wrapColumn":{"Desktop":false,"Tablet":false,"Mobile":true}} -->
+<!-- wp:gutenverse/column {"width":{"Desktop":50},"sectionVerticalAlign":"center","elementId":"guten-ymiep6"} -->
+<!-- wp:gutenverse/heading {"elementId":"guten-Ak2g83","content":"Pricing Plan","type":5,"textAlign":{"Desktop":"left","Mobile":"center"},"color":{"type":"variable","id":"startupzy-primary"},"typography":{"type":"variable","id":"gv-font-subheading","font":{"label":"Helvetica","value":"Helvetica","type":"system"},"size":{"Desktop":{"unit":"px","point":"14"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.3"}},"spacing":{"Desktop":"0.15"},"transform":"uppercase","weight":"600"},"containsAnchorTag":false,"animation":{"type":{"Desktop":"fadeInLeft"},"duration":"normal"}} /-->
+
+<!-- wp:gutenverse/heading {"elementId":"guten-cBpOB0","content":"Choose The Best Pricing","textAlign":{"Desktop":"left","Tablet":"left","Mobile":"center"},"color":{"type":"variable","id":"startupzy-secondary"},"typography":{"type":"variable","id":"gv-font-secondary","font":{"label":"Helvetica","value":"Helvetica","type":"system"},"size":{"Desktop":{"unit":"px","point":"36"},"Mobile":{"unit":"px","point":"24"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.3"}},"weight":"600"},"containsAnchorTag":false,"animation":{"type":{"Desktop":"fadeInLeft"},"duration":"normal","delay":"400"}} /-->
+<!-- /wp:gutenverse/column -->
+
+<!-- wp:gutenverse/column {"width":{"Desktop":50},"sectionVerticalAlign":"center","elementId":"guten-OKaadl"} -->
+<!-- wp:gutenverse/text-editor {"elementId":"guten-IkFrZj","alignment":{"Desktop":"left","Tablet":null,"Mobile":"center"},"textColor":{"type":"variable","id":"startupzy-bodytext"},"typography":{"type":"variable","id":"gv-font-text","font":{"label":"Heebo","value":"Heebo","type":"google"},"size":{"Desktop":{"unit":"px","point":"16"},"Mobile":{"unit":"px","point":"14"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.7"}},"weight":"300"},"containsAnchorTag":false,"margin":{"Desktop":[],"Tablet":[],"Mobile":[]},"padding":{"Desktop":{"unit":"%","dimension":{"right":"","left":"","top":"","bottom":""}},"Tablet":{"unit":"%","dimension":{"right":"0","left":"12"}},"Mobile":{"unit":"px","dimension":{"top":"0","right":"0","bottom":"0","left":"0"}}},"animation":{"type":{"Desktop":"fadeInRight"},"duration":"normal","delay":"200"}} -->
+<!-- wp:paragraph -->
+<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo.</p>
+<!-- /wp:paragraph -->
+<!-- /wp:gutenverse/text-editor -->
+<!-- /wp:gutenverse/column -->
+<!-- /wp:gutenverse/section -->
+
+<!-- wp:gutenverse/section {"width":{"Desktop":"1170"},"isChild":true,"gap":"no","elementId":"guten-wGru8K","margin":{"Desktop":{"unit":"px","dimension":{"top":"50"}},"Mobile":{"unit":"px","dimension":{"top":"20","right":"0","bottom":"0","left":"0"}}},"padding":{"Desktop":[],"Mobile":[]},"wrapColumn":{"Desktop":false,"Tablet":false,"Mobile":true}} -->
+<!-- wp:gutenverse/column {"width":{"Desktop":33.333333333333336,"Tablet":50,"Mobile":null},"elementId":"guten-r60rUF","border":{"radius":{"Desktop":{"unit":"px","dimension":{"top":"50"}}},"all":{"type":"solid","width":"1","color":{"type":"variable","id":"startupzy-border"}},"right":{"width":"1","type":"solid"}},"margin":{"Desktop":[],"Tablet":[],"Mobile":[]},"padding":{"Desktop":{"unit":"px","dimension":{"top":"50","right":"50","bottom":"50","left":"50"}},"Tablet":{"unit":"px","dimension":{"top":"","right":"","bottom":"","left":""}},"Mobile":{"unit":"px","dimension":{"top":"30","right":"30","bottom":"30","left":"30"}}},"animation":{"type":{"Desktop":"fadeInLeft"},"duration":"normal"}} -->
+<!-- wp:gutenverse/heading {"elementId":"guten-NnazXr","content":"Basic Plan","type":3,"color":{"type":"variable","id":"startupzy-secondary"},"typography":{"type":"variable","id":"gv-font-feature-tertiary","font":{"label":"Helvetica","value":"Helvetica","type":"system"},"size":{"Desktop":{"unit":"px","point":"28"},"Mobile":{"unit":"px","point":"24"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.2"}},"weight":"600"},"containsAnchorTag":false,"border":{"radius":{"Desktop":[]}},"margin":{"Desktop":[]},"padding":{"Desktop":[]}} /-->
+
+<!-- wp:gutenverse/heading {"elementId":"guten-xNEXIg","content":"$59.9","type":3,"color":{"type":"variable","id":"startupzy-primary"},"typography":{"type":"variable","id":"gv-font-pricing-number","font":{"label":"Helvetica","value":"Helvetica","type":"system"},"size":{"Desktop":{"unit":"px","point":"42"},"Mobile":{"unit":"px","point":"36"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.2"}},"weight":"600"},"containsAnchorTag":false,"border":{"radius":{"Desktop":[]}},"positioningType":{"Desktop":"inline"}} /-->
+
+<!-- wp:gutenverse/heading {"elementId":"guten-Dw9xwC","content":"/month","type":6,"color":{"type":"variable","id":"startupzy-bodytext"},"typography":{"type":"variable","id":"gv-font-text","font":{"label":"Heebo","value":"Heebo","type":"google"},"size":{"Desktop":{"unit":"px","point":"16"},"Mobile":{"unit":"px","point":"14"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.7"}},"weight":"300"},"containsAnchorTag":false,"border":{"radius":{"Desktop":[]}},"margin":{"Desktop":{"unit":"px","dimension":{"top":"25","left":"5"}}},"padding":{"Desktop":[]},"positioningType":{"Desktop":"inline"}} /-->
+
+<!-- wp:gutenverse/divider {"elementId":"guten-huv6ts","width":{"Desktop":"100"},"dividerColor":{"type":"variable","id":"startupzy-border"},"size":{"Desktop":"1"}} /-->
+
+<!-- wp:gutenverse/icon-list {"elementId":"guten-aKQp04","spaceBetween":{"Desktop":"15"},"iconColor":{"type":"variable","id":"startupzy-primary"},"textColor":{"type":"variable","id":"startupzy-bodytext"},"textColorHover":{"type":"variable","id":"startupzy-primary"},"textIndent":{"Desktop":"12"},"textTypography":{"type":"variable","id":"gv-font-text-list","font":{"label":"Heebo","value":"Heebo","type":"google"},"size":{"Desktop":{"unit":"px","point":"16"},"Mobile":{"unit":"px","point":"14"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.7"}},"weight":"400"},"margin":{"Desktop":{"unit":"px","dimension":{"top":"20"}}},"padding":{"Desktop":[]}} -->
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-la4lVF","icon":"fas fa-check","text":"Brand Performance Analytics"} /-->
+
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-rw3A3q","icon":"fas fa-check","text":"Daily Price Change Notification"} /-->
+
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-GpkHP1","icon":"fas fa-check","text":"Marketplace Price Tracking"} /-->
+
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-HlowhX","icon":"fas fa-check","text":"Stock Availability Monitoring"} /-->
+
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-d5KO71","icon":"fas fa-check","text":"Marketplace Price Tracking"} /-->
+<!-- /wp:gutenverse/icon-list -->
+
+<!-- wp:gutenverse/button {"elementId":"guten-t6AuD7","content":"Get Started","buttonWidth":{"Desktop":"100"},"alignButton":{"Desktop":null},"paddingButton":{"Desktop":{"unit":"px","dimension":{"top":"20","right":"40","bottom":"20","left":"40"}}},"buttonBackground":{"type":"default","color":{"type":"variable","id":"startupzy-primary"}},"buttonBackgroundHover":{"type":"default","color":{"type":"variable","id":"startupzy-secondary"}},"buttonBorder":{"radius":{"Desktop":{"unit":"px","dimension":{"top":"20","right":"0","bottom":"20","left":"0"}}}},"border":{"radius":{"Desktop":{"unit":"px","dimension":{"top":"","right":"","bottom":"","left":""}}}},"margin":{"Desktop":{"unit":"px","dimension":{"top":"30"}}},"padding":{"Desktop":[]},"color":{"type":"variable","id":"white"},"typography":{"type":"variable","id":"gv-font-button-secondary","font":{"label":"Helvetica","value":"Helvetica","type":"system"},"size":{"Desktop":{"unit":"px","point":"13"}},"lineHeight":{"Desktop":{"unit":"em","point":"1"}},"spacing":{"Desktop":"0.15"},"transform":"uppercase","weight":"600"},"hoverTextColor":{"type":"variable","id":"white"}} /-->
+<!-- /wp:gutenverse/column -->
+
+<!-- wp:gutenverse/column {"width":{"Desktop":33.333333333333336,"Tablet":50,"Mobile":null},"elementId":"guten-jUTT15","background":{"type":"default","color":{"type":"variable","id":"startupzy-primary"}},"border":{"radius":{"Desktop":{"unit":"px","dimension":{"top":"","right":"","bottom":"","left":""}}},"all":{"type":"solid","width":"1","color":{"r":204,"g":210,"b":219,"a":0}}},"margin":{"Desktop":[],"Mobile":[]},"padding":{"Desktop":{"unit":"px","dimension":{"top":"50","right":"50","bottom":"50","left":"50"}},"Mobile":{"unit":"px","dimension":{"top":"30","right":"30","bottom":"30","left":"30"}}},"animation":{"type":{"Desktop":"fadeInUp"},"duration":"normal"}} -->
+<!-- wp:gutenverse/heading {"elementId":"guten-Qcasae","content":"Premium Plan","type":3,"color":{"type":"variable","id":"white"},"typography":{"type":"variable","id":"gv-font-feature-tertiary","font":{"label":"Helvetica","value":"Helvetica","type":"system"},"size":{"Desktop":{"unit":"px","point":"28"},"Mobile":{"unit":"px","point":"24"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.2"}},"weight":"600"},"containsAnchorTag":false,"border":{"radius":{"Desktop":[]}},"margin":{"Desktop":[]},"padding":{"Desktop":[]}} /-->
+
+<!-- wp:gutenverse/heading {"elementId":"guten-SJ6pEz","content":"$159.9","type":3,"color":{"type":"variable","id":"startupzy-secondary"},"typography":{"type":"variable","id":"gv-font-pricing-number","font":{"label":"Helvetica","value":"Helvetica","type":"system"},"size":{"Desktop":{"unit":"px","point":"42"},"Mobile":{"unit":"px","point":"36"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.2"}},"weight":"600"},"containsAnchorTag":false,"border":{"radius":{"Desktop":[]}},"positioningType":{"Desktop":"inline"}} /-->
+
+<!-- wp:gutenverse/heading {"elementId":"guten-VmP6VZ","content":"/month","type":6,"color":{"type":"variable","id":"white"},"typography":{"type":"variable","id":"gv-font-text","font":{"label":"Heebo","value":"Heebo","type":"google"},"size":{"Desktop":{"unit":"px","point":"16"},"Mobile":{"unit":"px","point":"14"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.7"}},"weight":"300"},"containsAnchorTag":false,"border":{"radius":{"Desktop":[]}},"margin":{"Desktop":{"unit":"px","dimension":{"top":"25","left":"5"}}},"padding":{"Desktop":[]},"positioningType":{"Desktop":"inline"}} /-->
+
+<!-- wp:gutenverse/divider {"elementId":"guten-CXkvBl","width":{"Desktop":"100"},"dividerColor":{"type":"variable","id":"startupzy-border"},"size":{"Desktop":"1"}} /-->
+
+<!-- wp:gutenverse/icon-list {"elementId":"guten-qLhrW5","spaceBetween":{"Desktop":"15"},"iconColor":{"type":"variable","id":"white"},"textColor":{"type":"variable","id":"white"},"textColorHover":{"type":"variable","id":"gv-color-text-footer"},"textIndent":{"Desktop":"12"},"textTypography":{"type":"variable","id":"gv-font-text-list","font":{"label":"Heebo","value":"Heebo","type":"google"},"size":{"Desktop":{"unit":"px","point":"16"},"Mobile":{"unit":"px","point":"14"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.7"}},"weight":"400"},"margin":{"Desktop":{"unit":"px","dimension":{"top":"20"}}},"padding":{"Desktop":[]}} -->
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-gGsRYS","icon":"fas fa-check","text":"Marketplace Price Tracking"} /-->
+
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-HUKlQ6","icon":"fas fa-check","text":"Stock Availability Monitoring"} /-->
+
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-Llqh19","icon":"fas fa-check","text":"Brand Performance Analytics"} /-->
+
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-bkG346","icon":"fas fa-check","text":"Daily Price Change Notification"} /-->
+
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-ArS3OZ","icon":"fas fa-check","text":"Marketplace Price Tracking"} /-->
+<!-- /wp:gutenverse/icon-list -->
+
+<!-- wp:gutenverse/button {"elementId":"guten-ytJIx0","content":"Get Started","buttonWidth":{"Desktop":"100"},"alignButton":{"Desktop":null},"paddingButton":{"Desktop":{"unit":"px","dimension":{"top":"20","right":"40","bottom":"20","left":"40"}},"Tablet":[]},"buttonBackground":{"type":"default","color":{"type":"variable","id":"white"}},"buttonBackgroundHover":{"type":"default","color":{"type":"variable","id":"startupzy-secondary"}},"buttonBorder":{"radius":{"Desktop":{"unit":"px","dimension":{"top":"20","right":"0","bottom":"20","left":"0"}}}},"border":{"radius":{"Desktop":{"unit":"px","dimension":{"top":"","right":"","bottom":"","left":""}}}},"margin":{"Desktop":{"unit":"px","dimension":{"top":"30"}}},"padding":{"Desktop":[]},"color":{"type":"variable","id":"startupzy-primary"},"typography":{"type":"variable","id":"gv-font-button-secondary","font":{"label":"Helvetica","value":"Helvetica","type":"system"},"size":{"Desktop":{"unit":"px","point":"13"}},"lineHeight":{"Desktop":{"unit":"em","point":"1"}},"spacing":{"Desktop":"0.15"},"transform":"uppercase","weight":"600"},"hoverTextColor":{"type":"variable","id":"white"}} /-->
+<!-- /wp:gutenverse/column -->
+
+<!-- wp:gutenverse/column {"width":{"Desktop":33.333333333333336,"Tablet":100},"elementId":"guten-jcP6W2","border":{"radius":{"Desktop":{"unit":"px","dimension":{"top":"","right":"","bottom":"40","left":""}},"Tablet":[],"Mobile":[]},"all":{"type":"solid","width":"1","color":{"type":"variable","id":"startupzy-border"}},"left":{"type":"solid","width":"1"}},"margin":{"Desktop":[],"Tablet":{"unit":"px","dimension":{"top":"","right":"","bottom":"","left":""}},"Mobile":[]},"padding":{"Desktop":{"unit":"px","dimension":{"top":"50","right":"50","bottom":"50","left":"50"}},"Tablet":[],"Mobile":{"unit":"px","dimension":{"top":"30","right":"30","bottom":"30","left":"30"}}},"animation":{"type":{"Desktop":"fadeInRight"},"duration":"normal"}} -->
+<!-- wp:gutenverse/heading {"elementId":"guten-xqwblX","content":"Standard Plan","type":3,"color":{"type":"variable","id":"startupzy-secondary"},"typography":{"type":"variable","id":"gv-font-feature-tertiary","font":{"label":"Helvetica","value":"Helvetica","type":"system"},"size":{"Desktop":{"unit":"px","point":"28"},"Mobile":{"unit":"px","point":"24"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.2"}},"weight":"600"},"containsAnchorTag":false,"border":{"radius":{"Desktop":[]}},"margin":{"Desktop":[]},"padding":{"Desktop":[]}} /-->
+
+<!-- wp:gutenverse/heading {"elementId":"guten-jsbt3m","content":"$89.9","type":3,"color":{"type":"variable","id":"startupzy-primary"},"typography":{"type":"variable","id":"gv-font-pricing-number","font":{"label":"Helvetica","value":"Helvetica","type":"system"},"size":{"Desktop":{"unit":"px","point":"42"},"Mobile":{"unit":"px","point":"36"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.2"}},"weight":"600"},"containsAnchorTag":false,"border":{"radius":{"Desktop":[]}},"positioningType":{"Desktop":"inline"}} /-->
+
+<!-- wp:gutenverse/heading {"elementId":"guten-l2UaB5","content":"/month","type":6,"color":{"type":"variable","id":"startupzy-bodytext"},"typography":{"type":"variable","id":"gv-font-text","font":{"label":"Heebo","value":"Heebo","type":"google"},"size":{"Desktop":{"unit":"px","point":"16"},"Mobile":{"unit":"px","point":"14"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.7"}},"weight":"300"},"containsAnchorTag":false,"border":{"radius":{"Desktop":[]}},"margin":{"Desktop":{"unit":"px","dimension":{"top":"25","left":"5"}}},"padding":{"Desktop":[]},"positioningType":{"Desktop":"inline"}} /-->
+
+<!-- wp:gutenverse/divider {"elementId":"guten-kKu6J8","width":{"Desktop":"100"},"dividerColor":{"type":"variable","id":"startupzy-border"},"size":{"Desktop":"1"}} /-->
+
+<!-- wp:gutenverse/icon-list {"elementId":"guten-jweTSV","spaceBetween":{"Desktop":"15"},"iconColor":{"type":"variable","id":"startupzy-primary"},"textColor":{"type":"variable","id":"startupzy-bodytext"},"textColorHover":{"type":"variable","id":"startupzy-primary"},"textIndent":{"Desktop":"12"},"textTypography":{"type":"variable","id":"gv-font-text-list","font":{"label":"Heebo","value":"Heebo","type":"google"},"size":{"Desktop":{"unit":"px","point":"16"},"Mobile":{"unit":"px","point":"14"}},"lineHeight":{"Desktop":{"unit":"em","point":"1.7"}},"weight":"400"},"margin":{"Desktop":{"unit":"px","dimension":{"top":"20"}}},"padding":{"Desktop":[]}} -->
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-eHzBoB","icon":"fas fa-check","text":"Marketplace Price Tracking"} /-->
+
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-XLVKd9","icon":"fas fa-check","text":"Brand Performance Analytics"} /-->
+
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-4JZTva","icon":"fas fa-check","text":"Daily Price Change Notification"} /-->
+
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-7iw8Y8","icon":"fas fa-check","text":"Marketplace Price Tracking"} /-->
+
+<!-- wp:gutenverse/icon-list-item {"elementId":"guten-ryIRpN","icon":"fas fa-check","text":"Stock Availability Monitoring"} /-->
+<!-- /wp:gutenverse/icon-list -->
+
+<!-- wp:gutenverse/button {"elementId":"guten-VIsxef","content":"Get Started","buttonWidth":{"Desktop":"100"},"alignButton":{"Desktop":null},"paddingButton":{"Desktop":{"unit":"px","dimension":{"top":"20","right":"40","bottom":"20","left":"40"}}},"buttonBackground":{"type":"default","color":{"type":"variable","id":"startupzy-primary"}},"buttonBackgroundHover":{"type":"default","color":{"type":"variable","id":"startupzy-secondary"}},"buttonBorder":{"radius":{"Desktop":{"unit":"px","dimension":{"top":"20","right":"0","bottom":"20","left":"0"}}}},"border":{"radius":{"Desktop":{"unit":"px","dimension":{"top":"","right":"","bottom":"","left":""}}}},"margin":{"Desktop":{"unit":"px","dimension":{"top":"30"}}},"padding":{"Desktop":[]},"color":{"r":255,"g":255,"b":255,"a":1},"typography":{"font":{"label":"Helvetica","value":"Helvetica","type":"system"},"size":{"Desktop":{"point":"13","unit":"px"}},"weight":"600","transform":"uppercase","spacing":{"Desktop":"0.15"}},"hoverTextColor":{"r":255,"g":255,"b":255,"a":1}} /-->
+<!-- /wp:gutenverse/column -->
+<!-- /wp:gutenverse/section -->
+<!-- /wp:gutenverse/column -->
+<!-- /wp:gutenverse/section -->',
+	'is_sync' => false,
+);

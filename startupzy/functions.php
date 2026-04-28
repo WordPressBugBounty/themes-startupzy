@@ -1,22 +1,21 @@
 <?php
 /**
- * Startupzy functions and definitions
+ * Theme Functions
  *
  * @author Jegstudio
  * @package startupzy
- * @since 1.0.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-defined( 'STARTUPZY_VERSION' ) || define( 'STARTUPZY_VERSION', '1.1.4' );
+defined( 'STARTUPZY_VERSION' ) || define( 'STARTUPZY_VERSION', '1.2.0' );
 defined( 'STARTUPZY_DIR' ) || define( 'STARTUPZY_DIR', trailingslashit( get_template_directory() ) );
-defined( 'STARTUPZY_URI' ) || define( 'STARTUPZY_URI', trailingslashit( get_template_directory_uri() ) );
+
+defined( 'GUTENVERSE_COMPANION_REQUIRED_VERSION' ) || define( 'GUTENVERSE_COMPANION_REQUIRED_VERSION', '2.3.3' );
+defined( 'GUTENVERSE_LIBRARY_SERVER' ) || define( 'GUTENVERSE_LIBRARY_SERVER', 'https://gutenverse.com' );
 
 require get_parent_theme_file_path( 'inc/autoload.php' );
-require get_parent_theme_file_path( 'inc/helper.php' );
-require get_parent_theme_file_path( 'inc/wptt-webfont-loader.php' );
 
 Startupzy\Init::instance();
