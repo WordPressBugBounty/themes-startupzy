@@ -2,14 +2,14 @@
 # This file is distributed under the GNU General Public License v3 or later..
 msgid ""
 msgstr ""
-"Project-Id-Version: Startupzy 1.2.1\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/theme/startupzy-sCSnblTjyhcQ\n"
+"Project-Id-Version: Startupzy 1.2.2\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/theme/startupzy-RWzwfBy40DzJ\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-04T05:27:15+00:00\n"
+"POT-Creation-Date: 2026-05-08T03:26:15+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: startupzy\n"
@@ -75,12 +75,12 @@ msgstr ""
 
 #: inc/class/class-init.php:2045
 #: inc/class/class-plugin-notice.php:90
-msgid "Gutenverse &#8211; Ultimate WordPress FSE Blocks Addons &amp; Ecosystem"
+msgid "Gutenverse"
 msgstr ""
 
 #: inc/class/class-init.php:2046
 #: inc/class/class-plugin-notice.php:91
-msgid "GUTENVERSE – GUTENBERG BLOCKS AND WEBSITE BUILDER FOR SITE EDITOR, TEMPLATE LIBRARY, POPUP BUILDER, ADVANCED ANIMATION EFFECTS, COMPLETE FEATURE ECOSYSTEM, 45+ FREE USER-FRIENDLY BLOCKS"
+msgid "Gutenverse is a WordPress Gutenberg blocks plugin, block editor addon, and Site Editor page builder for creating fast, responsive websites without code. It includes 57 WordPress blocks, 600+ templates, global styles, responsive controls, popup builder tools, and block theme support."
 msgstr ""
 
 #: inc/class/class-init.php:2059
@@ -93,54 +93,64 @@ msgstr ""
 msgid "A companion plugin designed specifically to enhance and extend the functionality of Gutenverse base themes. This plugin integrates seamlessly with the base themes, providing additional features, customization options, and advanced tools to optimize the overall user experience and streamline the development process."
 msgstr ""
 
-#: inc/class/class-init.php:2086
+#: inc/class/class-init.php:2072
+#: inc/class/class-plugin-notice.php:117
+msgid "Gutenverse Form"
+msgstr ""
+
+#: inc/class/class-init.php:2073
+#: inc/class/class-plugin-notice.php:118
+msgid "GUTENVERSE FORM – FORM BUILDER FOR GUTENBERG BLOCK EDITOR, MULTI-STEP FORMS, CONDITIONAL LOGIC, PAYMENT, CALCULATION, 15+ FREE USER-FRIENDLY FORM BLOCKS"
+msgstr ""
+
+#: inc/class/class-init.php:2099
 msgid "Startupzy Pro"
 msgstr ""
 
-#: inc/class/class-init.php:2149
+#: inc/class/class-init.php:2162
 msgid "You don't have any demo activated"
 msgstr ""
 
-#: inc/class/class-init.php:2217
-#: inc/class/class-init.php:2219
-#: inc/class/class-init.php:2220
+#: inc/class/class-init.php:2230
+#: inc/class/class-init.php:2232
+#: inc/class/class-init.php:2233
 msgid "unknown"
 msgstr ""
 
-#: inc/class/class-init.php:2222
+#: inc/class/class-init.php:2235
 msgid "by"
 msgstr ""
 
-#: inc/class/class-init.php:2244
-#: inc/class/class-init.php:2245
+#: inc/class/class-init.php:2257
+#: inc/class/class-init.php:2258
 msgid "Startupzy Dashboard"
 msgstr ""
 
-#: inc/class/class-plugin-notice.php:334
+#: inc/class/class-plugin-notice.php:347
 msgid "Installing..."
 msgstr ""
 
-#: inc/class/class-plugin-notice.php:374
+#: inc/class/class-plugin-notice.php:387
 msgid "Install Failed, Try Again"
 msgstr ""
 
-#: inc/class/class-plugin-notice.php:388
+#: inc/class/class-plugin-notice.php:401
 msgid "Thank you For Installing Startupzy Theme"
 msgstr ""
 
-#: inc/class/class-plugin-notice.php:390
+#: inc/class/class-plugin-notice.php:403
 msgid "Unlock the full potential of your website with the recommended plugins."
 msgstr ""
 
-#: inc/class/class-plugin-notice.php:392
+#: inc/class/class-plugin-notice.php:405
 msgid "Activate it to explore exclusive extensions, ready-to-use demo templates, and powerful features that make building your site easier and more enjoyable."
 msgstr ""
 
-#: inc/class/class-plugin-notice.php:396
+#: inc/class/class-plugin-notice.php:409
 msgid "Install Recommended Plugins"
 msgstr ""
 
-#: inc/class/class-plugin-notice.php:400
+#: inc/class/class-plugin-notice.php:413
 msgid "Don\\'t refresh the page when installing recommended plugins"
 msgstr ""
 

@@ -87,8 +87,8 @@ class Plugin_Notice {
 		$plugins_required    = array(
             array(
 					'slug'       		=> 'gutenverse',
-					'title'      		=> esc_html__( 'Gutenverse &#8211; Ultimate WordPress FSE Blocks Addons &amp; Ecosystem', 'startupzy' ),
-					'short_desc' 		=> esc_html__( 'GUTENVERSE – GUTENBERG BLOCKS AND WEBSITE BUILDER FOR SITE EDITOR, TEMPLATE LIBRARY, POPUP BUILDER, ADVANCED ANIMATION EFFECTS, COMPLETE FEATURE ECOSYSTEM, 45+ FREE USER-FRIENDLY BLOCKS', 'startupzy' ),
+					'title'      		=> esc_html__( 'Gutenverse', 'startupzy' ),
+					'short_desc' 		=> esc_html__( 'Gutenverse is a WordPress Gutenberg blocks plugin, block editor addon, and Site Editor page builder for creating fast, responsive websites without code. It includes 57 WordPress blocks, 600+ templates, global styles, responsive controls, popup builder tools, and block theme support.', 'startupzy' ),
 					'active'    		=> in_array( 'gutenverse', $plugins, true ),
 					'installed'  		=> $this->is_installed( 'gutenverse' ),
 					'req_version'    	=> '3.6.0',
@@ -109,6 +109,19 @@ class Plugin_Notice {
 					'installed_version' => isset( $installed_plugins['gutenverse-companion/gutenverse-companion.php']['Version'] ) ? $installed_plugins['gutenverse-companion/gutenverse-companion.php']['Version'] : '',
 					'icons'      		=> array (
   '1x' => 'https://ps.w.org/gutenverse-companion/assets/icon-128x128.png?rev=3162415',
+),
+					'download_url'      => '',
+				),
+				array(
+					'slug'       		=> 'gutenverse-form',
+					'title'      		=> esc_html__( 'Gutenverse Form', 'startupzy' ),
+					'short_desc' 		=> esc_html__( 'GUTENVERSE FORM – FORM BUILDER FOR GUTENBERG BLOCK EDITOR, MULTI-STEP FORMS, CONDITIONAL LOGIC, PAYMENT, CALCULATION, 15+ FREE USER-FRIENDLY FORM BLOCKS', 'startupzy' ),
+					'active'    		=> in_array( 'gutenverse-form', $plugins, true ),
+					'installed'  		=> $this->is_installed( 'gutenverse-form' ),
+					'req_version'    	=> '2.6.1',
+					'installed_version' => isset( $installed_plugins['gutenverse-form/gutenverse-form.php']['Version'] ) ? $installed_plugins['gutenverse-form/gutenverse-form.php']['Version'] : '',
+					'icons'      		=> array (
+  '1x' => 'https://ps.w.org/gutenverse-form/assets/icon-128x128.png?rev=3135966',
 ),
 					'download_url'      => '',
 				)

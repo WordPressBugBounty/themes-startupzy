@@ -102,8 +102,11 @@ Source: https://pxhere.com/en/photo/1449315
 
 == Changelog ==
 
+= 1.2.2 =
+* Minor update
+
 = 1.2.1 =
-* Improved: Overall performance and SEO optimization.
+* Improved: Overall performance and SEO optimization
 
 = 1.2.0 =
 * Update theme dashboard

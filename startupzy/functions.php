@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-defined( 'STARTUPZY_VERSION' ) || define( 'STARTUPZY_VERSION', '1.2.1' );
+defined( 'STARTUPZY_VERSION' ) || define( 'STARTUPZY_VERSION', '1.2.2' );
 defined( 'STARTUPZY_DIR' ) || define( 'STARTUPZY_DIR', trailingslashit( get_template_directory() ) );
 
 defined( 'GUTENVERSE_COMPANION_REQUIRED_VERSION' ) || define( 'GUTENVERSE_COMPANION_REQUIRED_VERSION', '2.3.3' );
